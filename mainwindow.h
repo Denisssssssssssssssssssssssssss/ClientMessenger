@@ -7,11 +7,12 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-public:
-    //MainWindow(QWidget *parent = nullptr);
-    //~MainWindow();
-
 private:
+    unsigned int window_width = 500;
+    unsigned int window_height = 500;
+
+public:
+    MainWindow(QWidget *parent = nullptr);
 
 };
 #endif // MAINWINDOW_H
