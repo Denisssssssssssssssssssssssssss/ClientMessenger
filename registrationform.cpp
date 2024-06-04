@@ -45,9 +45,11 @@ RegistrationForm::RegistrationForm(QWidget *parent)
     opendEyeLabelPassAgain->hide();
 
     QHBoxLayout *passwordLayout = new QHBoxLayout();
-    passwordLayout->addWidget(passwordEdit, 0, Qt::AlignCenter);
-    passwordLayout->addWidget(closedEyeLabelPass, 0, Qt::AlignCenter);
-    passwordLayout->addWidget(opendEyeLabelPass, 0, Qt::AlignCenter);
+    passwordLayout->addStretch(5);
+    passwordLayout->addWidget(passwordEdit);
+    passwordLayout->addWidget(closedEyeLabelPass);
+    passwordLayout->addWidget(opendEyeLabelPass);
+    passwordLayout->addStretch(4);
 
     passwordEditAgain = new QLineEdit();
     passwordEditAgain->setPlaceholderText(tr("Введите пароль еще раз..."));
@@ -55,9 +57,11 @@ RegistrationForm::RegistrationForm(QWidget *parent)
     passwordEditAgain->setFixedWidth(200);
 
     QHBoxLayout *passwordAgainLayout = new QHBoxLayout();
-    passwordAgainLayout->addWidget(passwordEditAgain, 0, Qt::AlignCenter);
-    passwordAgainLayout->addWidget(closedEyeLabelPassAgain, 0, Qt::AlignCenter);
-    passwordAgainLayout->addWidget(opendEyeLabelPassAgain, 0, Qt::AlignCenter);
+    passwordAgainLayout->addStretch(5);
+    passwordAgainLayout->addWidget(passwordEditAgain);
+    passwordAgainLayout->addWidget(closedEyeLabelPassAgain);
+    passwordAgainLayout->addWidget(opendEyeLabelPassAgain);
+    passwordAgainLayout->addStretch(4);
 
     opendEyeLabelPass->installEventFilter(this);
     closedEyeLabelPass->installEventFilter(this);

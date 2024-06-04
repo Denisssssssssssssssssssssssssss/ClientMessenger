@@ -17,7 +17,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 //Слот для отображения формы авторизации
 void MainWindow::showLoginForm()
 {
-    if (centralWidget()->layout()) {
+    if (centralWidget()->layout())
+    {
         centralWidget()->layout()->removeWidget(registrationForm); //Удаляет виджет из лейаута
     }
     registrationForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
@@ -28,7 +29,8 @@ void MainWindow::showLoginForm()
 //Слот для отображения формы регистрации
 void MainWindow::showRegistrationForm()
 {
-    if (centralWidget()->layout()) {
+    if (centralWidget()->layout())
+    {
         centralWidget()->layout()->removeWidget(loginForm); //Удаляет виджет из лейаута
     }
     loginForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
