@@ -10,7 +10,7 @@ LoginForm::LoginForm(QWidget *parent) : QWidget(parent)
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(registerLabel, 0, Qt::AlignTop | Qt::AlignRight);
     // Надпись "Вход" и остальные элементы
-    QLabel *titleLabel = new QLabel(tr("Вход"));
+    titleLabel = new QLabel(tr("Вход"));
     titleFont = titleLabel->font();
     titleFont.setPointSize(14);
     titleLabel->setFont(titleFont);
@@ -22,7 +22,7 @@ LoginForm::LoginForm(QWidget *parent) : QWidget(parent)
     passwordEdit->setEchoMode(QLineEdit::Password);
     passwordEdit->setFixedWidth(200);
     loginButton = new QPushButton(tr("Войти"));
-    loginButton->setFixedWidth(100);
+    loginButton->setFixedWidth(120);
     QVBoxLayout *centerLayout = new QVBoxLayout();
     centerLayout->addStretch(1); //Начало макета с растяжимым пространством
     centerLayout->addWidget(titleLabel, 0, Qt::AlignCenter);
@@ -39,10 +39,11 @@ LoginForm::LoginForm(QWidget *parent) : QWidget(parent)
     mainLayout->addLayout(centerLayout);
     mainLayout->setStretchFactor(centerLayout, 9); //Больший вес для centerLayout
     setLayout(mainLayout);
+    connect(registerLabel, &QLabel::linkActivated, this, &LoginForm::onRegisterClicked);
+
 }
 
 void LoginForm::onRegisterClicked()
 {
-    // Эмитируем сигнал, когда кликают на текст "Зарегистрироваться"
     emit registerRequested();
 }

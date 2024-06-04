@@ -24,9 +24,11 @@ private slots:
 
 private:
     QLabel *registerLabel;
+    QLabel *titleLabel;
     QLineEdit *loginEdit;
     QLineEdit *passwordEdit;
     QPushButton *loginButton;
+
 };
 
 #endif // LOGINFORM_H

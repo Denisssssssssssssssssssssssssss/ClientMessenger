@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>icon-info.png</file>
+        <file>icon-bin.png</file>
+        <file>icon-cross.png</file>
+        <file>icon-eye-closed.png</file>
+        <file>icon-eye-opened.png</file>
+    </qresource>
+</RCC>
