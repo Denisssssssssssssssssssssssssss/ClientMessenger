@@ -13,10 +13,16 @@
 
 class RegistrationForm : public QWidget
 {
+    Q_OBJECT
+
 private:
     QLabel *registerLabel;
     QLabel *titleLabel;
-    QLabel* imageLabel;
+    QLabel* imageLabel; //Картинка открывающая информацию
+    QLabel* opendEyeLabelPass; //Картинка открытого глаза
+    QLabel* closedEyeLabelPass; //Картинка закрытого глаза
+    QLabel* opendEyeLabelPassAgain;
+    QLabel* closedEyeLabelPassAgain;
     QLineEdit *loginEdit;
     QLineEdit *passwordEdit;
     QLineEdit *passwordEditAgain;
@@ -27,9 +33,13 @@ private:
 
 private slots:
     void onImageLabelClicked();
+    void backButtonClicked();
 
 public:
     explicit RegistrationForm(QWidget *parent = nullptr);
+
+signals:
+    void backRequested();
 
 };
 

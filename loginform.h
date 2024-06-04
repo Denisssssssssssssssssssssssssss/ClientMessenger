@@ -13,21 +13,21 @@ class LoginForm : public QWidget
 {
     Q_OBJECT
 
-public:
-    explicit LoginForm(QWidget *parent = nullptr);
-
-signals:
-    void registerRequested(); // Сигнал для перехода к форме регистрации
-
-private slots:
-    void onRegisterClicked(); // Слот для обработки клика на ссылку "Зарегистрироваться"
-
 private:
     QLabel *registerLabel;
     QLabel *titleLabel;
     QLineEdit *loginEdit;
     QLineEdit *passwordEdit;
     QPushButton *loginButton;
+
+private slots:
+    void onRegisterClicked(); // Слот для обработки клика на ссылку "Зарегистрироваться"
+
+public:
+    explicit LoginForm(QWidget *parent = nullptr);
+
+signals:
+    void registerRequested(); // Сигнал для перехода к форме регистрации
 
 };
 

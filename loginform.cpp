@@ -2,14 +2,12 @@
 
 LoginForm::LoginForm(QWidget *parent) : QWidget(parent)
 {
-    // Надпись "Еще нет аккаунта? Зарегистрироваться"
     registerLabel = new QLabel(tr("Еще нет аккаунта? <a href=\"register\" style=\"color:#1E90FF;\">Зарегистрироваться</a>"));
     QFont titleFont = registerLabel->font();
-    titleFont.setPointSize(10); // Размер шрифта для заголовка
+    titleFont.setPointSize(10); //Размер шрифта
     registerLabel->setFont(titleFont);
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(registerLabel, 0, Qt::AlignTop | Qt::AlignRight);
-    // Надпись "Вход" и остальные элементы
     titleLabel = new QLabel(tr("Вход"));
     titleFont = titleLabel->font();
     titleFont.setPointSize(14);
@@ -39,11 +37,14 @@ LoginForm::LoginForm(QWidget *parent) : QWidget(parent)
     mainLayout->addLayout(centerLayout);
     mainLayout->setStretchFactor(centerLayout, 9); //Больший вес для centerLayout
     setLayout(mainLayout);
+
     connect(registerLabel, &QLabel::linkActivated, this, &LoginForm::onRegisterClicked);
 
 }
 
 void LoginForm::onRegisterClicked()
 {
+    loginEdit->clear();
+    passwordEdit->clear();
     emit registerRequested();
 }

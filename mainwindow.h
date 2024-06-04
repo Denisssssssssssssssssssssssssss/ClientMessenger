@@ -13,12 +13,16 @@ class MainWindow : public QMainWindow
 private:
     LoginForm *loginForm;
     RegistrationForm *registrationForm;
+
     unsigned int window_width = 500;
     unsigned int window_height = 500;
 
 private slots:
     void showLoginForm();
     void showRegistrationForm();
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 public:
     MainWindow(QWidget *parent = nullptr);
