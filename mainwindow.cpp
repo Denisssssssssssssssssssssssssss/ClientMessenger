@@ -2,12 +2,12 @@
 
 #include <QMessageBox>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
+MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : socket(socket), QMainWindow(parent)
 {
     setWindowIcon(QIcon(":/images/logo.png"));
     resize(window_width, window_height);
-    loginForm = new LoginForm(this);
-    registrationForm = new RegistrationForm(this);
+    loginForm = new LoginForm(socket, this);
+    registrationForm = new RegistrationForm(socket, this);
     setCentralWidget(loginForm);
     connect(loginForm, &LoginForm::registerRequested, this, &MainWindow::showRegistrationForm);
     connect(registrationForm, &RegistrationForm::backRequested, this, &MainWindow::showLoginForm);

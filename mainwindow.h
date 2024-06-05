@@ -13,9 +13,9 @@ class MainWindow : public QMainWindow
 private:
     LoginForm *loginForm;
     RegistrationForm *registrationForm;
-
     unsigned int window_width = 500;
     unsigned int window_height = 500;
+    QTcpSocket *socket;
 
 private slots:
     void showLoginForm();
@@ -25,7 +25,7 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(QTcpSocket* socket, QWidget *parent = nullptr);
 
 };
 #endif // MAINWINDOW_H

@@ -3,8 +3,9 @@
 #include <QPixmap>
 #include <QDir>
 #include <QMessageBox>
+#include <QRegularExpression>
 
-RegistrationForm::RegistrationForm(QWidget *parent)
+RegistrationForm::RegistrationForm(QTcpSocket *socket, QWidget *parent) : socket(socket)
 {
     imageLabel = new QLabel(this);
     QPixmap pixmap(":/images/icon-info.png");
@@ -90,6 +91,8 @@ RegistrationForm::RegistrationForm(QWidget *parent)
     setLayout(mainLayout);
 
     connect(backButton, &QPushButton::clicked, this, &RegistrationForm::backButtonClicked);
+    connect(registerButton, &QPushButton::clicked, this, &RegistrationForm::registerUser);
+
 }
 
 bool RegistrationForm::eventFilter(QObject *target, QEvent *event)
@@ -130,20 +133,63 @@ bool RegistrationForm::eventFilter(QObject *target, QEvent *event)
     return QWidget::eventFilter(target, event); // Для всех остальных случаев вызовите базовую реализацию
 }
 
-
-
 void RegistrationForm::onImageLabelClicked()
 {
     QMessageBox::information(this, "Информация", "Логин может состоять из символов латиницы любого регистра, цифр, тире и нижнего подчеркивания.\n"
                                                  "Логин должен состоять как минимум из 1 символа, как максимум из 255 символов.\n"
+                                                 "Логин должен быть уникальным.\n"
                                                  "Пароль должен состоять из символов латиницы разного регистра, "
                                                  "цифр и специальных символов.\nДлина пароля не может быть менее 8 символов и\n"
                                                  "не может быть более 255 символов.");
 }
 
-void RegistrationForm::backButtonClicked() {
+void RegistrationForm::backButtonClicked()
+{
     loginEdit->clear();
     passwordEdit->clear();
     passwordEditAgain->clear();
     emit backRequested();
+}
+
+void RegistrationForm::registerUser()
+{
+    QString password = passwordEdit->text();
+    QString passwordAgain = passwordEditAgain->text();
+    QString login = loginEdit->text();
+    if(login.length() && password.length() && passwordAgain.length())
+    {
+        if(!loginContainsOnlyAllowedCharacters(login))
+        {
+            QMessageBox::warning(this, "Ошибка", "В логине использованы запрещенные символы.");
+            return;
+        }
+        if (password != passwordAgain)
+        {
+            QMessageBox::warning(this, "Ошибка", "Пароли не совпадают.");
+            return;
+        }
+        if (password.length() < 8 || !passwordContainsRequiredCharacters(password))
+        {
+            QMessageBox::warning(this, "Ошибка", "Пароль не соответствует требованиям безопасности.");
+            return;
+        }
+
+    }
+}
+
+bool RegistrationForm::passwordContainsRequiredCharacters(const QString &password) {
+    QRegularExpression upperCaseRegExp("[A-Z]"); //Регулярное выражение для заглавных букв
+    QRegularExpression lowerCaseRegExp("[a-z]"); //Регулярное выражение для строчных букв
+    QRegularExpression digitRegExp("\\d");       //Регулярное выражение для цифр
+    QRegularExpression specialRegExp("[!@#$%^&*()_+=-]"); //Регулярное выражение для специальных символов
+
+    return password.contains(upperCaseRegExp) &&
+           password.contains(lowerCaseRegExp) &&
+           password.contains(digitRegExp) &&
+           password.contains(specialRegExp);
+}
+
+bool RegistrationForm::loginContainsOnlyAllowedCharacters(const QString &login) {
+    QRegularExpression loginRegExp("^[A-Za-z\\d_-]+$"); //Регулярное выражение для допустимых символов в логине
+    return login.contains(loginRegExp);
 }

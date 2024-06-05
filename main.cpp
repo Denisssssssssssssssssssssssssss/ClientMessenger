@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 
     //Подключение удалось
     QObject::connect(&socket, &QTcpSocket::connected, [&]() {
-        window = new MainWindow(); // Создаем окно при успешном соединении
+        window = new MainWindow(&socket); // Создаем окно при успешном соединении
         window->show();
     });
 

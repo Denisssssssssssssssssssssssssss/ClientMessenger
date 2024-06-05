@@ -8,6 +8,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QString>
+#include <QTcpSocket>
 
 class LoginForm : public QWidget
 {
@@ -19,12 +20,13 @@ private:
     QLineEdit *loginEdit;
     QLineEdit *passwordEdit;
     QPushButton *loginButton;
+    QTcpSocket *socket;
 
 private slots:
     void onRegisterClicked(); // Слот для обработки клика на ссылку "Зарегистрироваться"
 
 public:
-    explicit LoginForm(QWidget *parent = nullptr);
+    explicit LoginForm(QTcpSocket *socket, QWidget *parent = nullptr);
 
 signals:
     void registerRequested(); // Сигнал для перехода к форме регистрации

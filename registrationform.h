@@ -10,6 +10,7 @@
 #include <QString>
 #include <QEvent>
 #include <QMouseEvent>
+#include <QTcpSocket>
 
 class RegistrationForm : public QWidget
 {
@@ -28,15 +29,19 @@ private:
     QLineEdit *passwordEditAgain;
     QPushButton *registerButton;
     QPushButton *backButton;
+    QTcpSocket *socket;
 
     bool eventFilter(QObject *target, QEvent *event);
+    void registerUser();
+    bool passwordContainsRequiredCharacters(const QString &password);
+    bool loginContainsOnlyAllowedCharacters(const QString &login);
 
 private slots:
     void onImageLabelClicked();
     void backButtonClicked();
 
 public:
-    explicit RegistrationForm(QWidget *parent = nullptr);
+    explicit RegistrationForm(QTcpSocket *socket, QWidget *parent = nullptr);
 
 signals:
     void backRequested();

@@ -1,6 +1,6 @@
 #include "LoginForm.h"
 
-LoginForm::LoginForm(QWidget *parent) : QWidget(parent)
+LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : socket(socket), QWidget(parent)
 {
     registerLabel = new QLabel(tr("Еще нет аккаунта? <a href=\"register\" style=\"color:#1E90FF;\">Зарегистрироваться</a>"));
     QFont titleFont = registerLabel->font();
