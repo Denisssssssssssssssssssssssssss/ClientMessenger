@@ -11,6 +11,10 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : socket(socket), QM
     setCentralWidget(loginForm);
     connect(loginForm, &LoginForm::registerRequested, this, &MainWindow::showRegistrationForm);
     connect(registrationForm, &RegistrationForm::backRequested, this, &MainWindow::showLoginForm);
+
+    // Если мы хотим иметь возможность возвращаться на виджет LoginForm после неудачной регистрации
+    connect(registrationForm, &RegistrationForm::backRequested, this, &MainWindow::loginRequested);
+
     setWindowTitle(tr("Вход"));
 }
 

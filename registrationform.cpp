@@ -196,6 +196,7 @@ void RegistrationForm::registerUser()
     QByteArray dataArray = QJsonDocument(registrationRequest).toJson(QJsonDocument::Compact);
 
     // Отправка данных на сервер
+    connect(socket, &QTcpSocket::readyRead, this, &RegistrationForm::handleServerResponse);
     socket->write(dataArray);
     socket->flush(); // Ожидание отправки данных
 
@@ -220,4 +221,20 @@ bool RegistrationForm::loginContainsOnlyAllowedCharacters(const QString &login)
 {
     QRegularExpression loginRegExp("^[A-Za-z\\d_-]+$"); //Регулярное выражение для допустимых символов в логине
     return login.contains(loginRegExp);
+}
+
+void RegistrationForm::handleServerResponse()
+{
+    QByteArray responseData = socket->readAll();
+    QJsonDocument jsonDoc(QJsonDocument::fromJson(responseData));
+    QJsonObject jsonObj = jsonDoc.object();
+
+    disconnect(socket, &QTcpSocket::readyRead, this, &RegistrationForm::handleServerResponse);
+
+    if (jsonObj.contains("status") && jsonObj["status"].toString() == "success") {
+        QMessageBox::information(this, tr("Регистрация успешна"), tr("Регистрация прошла успешно!"));
+        emit backRequested();  // Предположим, что этот сигнал заставит MainWindow показать LoginForm
+    } else {
+        QMessageBox::critical(this, tr("Ошибка регистрации"), tr("Данный логин уже используется. Придумайте другой."));
+    }
 }

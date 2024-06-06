@@ -39,6 +39,8 @@ private:
 private slots:
     void onImageLabelClicked();
     void backButtonClicked();
+    void handleServerResponse();  //Слот для обработки ответа от сервера
+
 
 public:
     explicit RegistrationForm(QTcpSocket *socket, QWidget *parent = nullptr);

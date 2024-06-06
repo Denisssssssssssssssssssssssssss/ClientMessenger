@@ -27,5 +27,9 @@ protected:
 public:
     MainWindow(QTcpSocket* socket, QWidget *parent = nullptr);
 
+signals:
+    void loginRequested();  // Сигнал для переключения на форму входа
+
+
 };
 #endif // MAINWINDOW_H
