@@ -4,6 +4,9 @@
 #include <QDir>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QCryptographicHash>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 RegistrationForm::RegistrationForm(QTcpSocket *socket, QWidget *parent) : socket(socket)
 {
@@ -153,31 +156,55 @@ void RegistrationForm::backButtonClicked()
 
 void RegistrationForm::registerUser()
 {
+    QString login = loginEdit->text();
     QString password = passwordEdit->text();
     QString passwordAgain = passwordEditAgain->text();
-    QString login = loginEdit->text();
-    if(login.length() && password.length() && passwordAgain.length())
-    {
-        if(!loginContainsOnlyAllowedCharacters(login))
-        {
-            QMessageBox::warning(this, "Ошибка", "В логине использованы запрещенные символы.");
-            return;
-        }
-        if (password != passwordAgain)
-        {
-            QMessageBox::warning(this, "Ошибка", "Пароли не совпадают.");
-            return;
-        }
-        if (password.length() < 8 || !passwordContainsRequiredCharacters(password))
-        {
-            QMessageBox::warning(this, "Ошибка", "Пароль не соответствует требованиям безопасности.");
-            return;
-        }
 
+    if(!login.length() || !password.length() || !passwordAgain.length())
+    {
+        QMessageBox::warning(this, "Ошибка", "Все поля должны быть заполнены.");
+        return;
     }
+
+    if(!loginContainsOnlyAllowedCharacters(login))
+    {
+        QMessageBox::warning(this, "Ошибка", "В логине использованы запрещенные символы.");
+        return;
+    }
+    if(password != passwordAgain)
+    {
+        QMessageBox::warning(this, "Ошибка", "Пароли не совпадают.");
+        return;
+    }
+    if(password.length() < 8 || !passwordContainsRequiredCharacters(password))
+    {
+        QMessageBox::warning(this, "Ошибка", "Пароль не соответствует требованиям безопасности.");
+        return;
+    }
+
+    // Хеширование пароля с использованием логина как соли
+    QByteArray byteArrayPasswordSalt = (password + login).toUtf8();
+    QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha256).toHex();
+
+    // Создание JSON сообщения
+    QJsonObject registrationRequest;
+    registrationRequest["type"] = "register";
+    registrationRequest["login"] = login;
+    registrationRequest["password"] = QString(hashedPassword);
+
+    // Преобразование JSON объекта в строку
+    QByteArray dataArray = QJsonDocument(registrationRequest).toJson(QJsonDocument::Compact);
+
+    // Отправка данных на сервер
+    socket->write(dataArray);
+    socket->flush(); // Ожидание отправки данных
+
+    // Тут вы можете реализовать прием ответа от сервера и соответствующую логику
 }
 
-bool RegistrationForm::passwordContainsRequiredCharacters(const QString &password) {
+
+bool RegistrationForm::passwordContainsRequiredCharacters(const QString &password)
+{
     QRegularExpression upperCaseRegExp("[A-Z]"); //Регулярное выражение для заглавных букв
     QRegularExpression lowerCaseRegExp("[a-z]"); //Регулярное выражение для строчных букв
     QRegularExpression digitRegExp("\\d");       //Регулярное выражение для цифр
@@ -189,7 +216,8 @@ bool RegistrationForm::passwordContainsRequiredCharacters(const QString &passwor
            password.contains(specialRegExp);
 }
 
-bool RegistrationForm::loginContainsOnlyAllowedCharacters(const QString &login) {
+bool RegistrationForm::loginContainsOnlyAllowedCharacters(const QString &login)
+{
     QRegularExpression loginRegExp("^[A-Za-z\\d_-]+$"); //Регулярное выражение для допустимых символов в логине
     return login.contains(loginRegExp);
 }
