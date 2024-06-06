@@ -12,11 +12,15 @@ SOURCES += \
     loginform.cpp \
     main.cpp \
     mainwindow.cpp \
+    messengerform.cpp \
+    nicknameform.cpp \
     registrationform.cpp
 
 HEADERS += \
     loginform.h \
     mainwindow.h \
+    messengerform.h \
+    nicknameform.h \
     registrationform.h
 
 FORMS +=

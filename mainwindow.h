@@ -3,8 +3,12 @@
 
 #include "loginform.h"
 #include "registrationform.h"
+#include "nicknameform.h"
+#include "messengerform.h"
 
 #include <QMainWindow>
+#include <QJsonObject>
+#include <QString>
 
 class MainWindow : public QMainWindow
 {
@@ -13,13 +17,22 @@ class MainWindow : public QMainWindow
 private:
     LoginForm *loginForm;
     RegistrationForm *registrationForm;
+    NicknameForm *nicknameForm;
+    MessengerForm *messengerForm;
     unsigned int window_width = 500;
     unsigned int window_height = 500;
     QTcpSocket *socket;
+    QString login;
+
+    void isNicknameNewUser();
 
 private slots:
     void showLoginForm();
     void showRegistrationForm();
+    void showMessengerForm();
+    void showNicknameForm();
+    void onLoginSuccess();
+    void receiveNicknameStatus(); // Слот без параметров
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -29,7 +42,7 @@ public:
 
 signals:
     void loginRequested();  // Сигнал для переключения на форму входа
-
+    void checkNicknameStatus(const QString& login);  // Сигнал для проверки статуса никнейма
 
 };
 #endif // MAINWINDOW_H

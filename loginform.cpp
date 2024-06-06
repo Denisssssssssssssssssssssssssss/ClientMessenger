@@ -2,6 +2,11 @@
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QCoreApplication>
+#include <QMessageBox>
+#include <QRegularExpression>
+#include <QCryptographicHash>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), socket(socket)
 {
@@ -66,6 +71,9 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
     setLayout(mainLayout);
 
     connect(registerLabel, &QLabel::linkActivated, this, &LoginForm::onRegisterClicked);
+    connect(loginButton, &QPushButton::clicked, this, &LoginForm::attemptLogin);
+    connect(socket, &QTcpSocket::readyRead, this, &LoginForm::handleServerResponse);  // Подключаем обработчик
+
 }
 
 bool LoginForm::eventFilter(QObject *obj, QEvent *event)
@@ -92,4 +100,63 @@ void LoginForm::onRegisterClicked()
     loginEdit->clear();
     passwordEdit->clear();
     emit registerRequested();
+}
+
+void LoginForm::attemptLogin()
+{
+    QString login = loginEdit->text();
+    QString password = passwordEdit->text();
+
+    if(login.isEmpty() || password.isEmpty())
+    {
+        QMessageBox::warning(this, tr("Ошибка входа"), tr("Все поля должны быть заполнены."));
+        return;
+    }
+
+    // Хеширование пароля с использованием логина как соли
+    QByteArray byteArrayPasswordSalt = (password + login).toUtf8();
+    QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha256).toHex();
+
+    // Создание JSON сообщения для входа
+    QJsonObject loginRequest;
+    loginRequest["type"] = "login";
+    loginRequest["login"] = login;
+    loginRequest["password"] = QString(hashedPassword);
+
+    // Преобразование JSON объекта в строку
+    QByteArray dataArray = QJsonDocument(loginRequest).toJson(QJsonDocument::Compact);
+
+    // Отправка данных на сервер
+    socket->write(dataArray);
+    socket->flush();
+
+    // Тут вы можете добавить логику для приема и обработки ответа от сервера,
+    // например, с помощью соединения с сигналом readyRead сокета.
+}
+
+void LoginForm::handleServerResponse()
+{
+    QByteArray responseData = socket->readAll();
+    disconnect(socket, &QTcpSocket::readyRead, this, &LoginForm::handleServerResponse); // Отключаем после получения ответа
+
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
+    QJsonObject jsonObj = jsonDoc.object();
+
+    if(jsonObj["status"].toString() == "success") {
+        // В случае успеха сообщаем об этом
+
+        login = loginEdit->text();
+        qDebug() << login << "\n";
+        emit loginSuccess();
+    } else {
+        // В случае ошибки очистим поля ввода и покажем сообщение
+        loginEdit->clear();
+        passwordEdit->clear();
+        QMessageBox::critical(this, tr("Ошибка входа"), tr("Введен неправильно логин или пароль. Попробуйте еще раз"));
+    }
+}
+
+QString LoginForm::getLogin()
+{
+    return login;
 }
