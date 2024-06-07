@@ -8,7 +8,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-RegistrationForm::RegistrationForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), socket(socket)
+RegistrationForm::RegistrationForm(QTcpSocket *socket, QWidget *parent) : socket(socket)
 {
     imageLabel = new QLabel(this);
     QPixmap pixmap(":/images/icon-info.png");
@@ -232,6 +232,7 @@ void RegistrationForm::handleServerResponse()
 
     if (jsonObj.contains("status") && jsonObj["status"].toString() == "success") {
         QMessageBox::information(this, tr("Регистрация успешна"), tr("Регистрация прошла успешно!"));
+        disconnect(socket, nullptr, this, nullptr);
         emit backRequested();  // Предположим, что этот сигнал заставит MainWindow показать LoginForm
     } else {
         QMessageBox::critical(this, tr("Ошибка регистрации"), tr("Данный логин уже используется. Придумайте другой."));

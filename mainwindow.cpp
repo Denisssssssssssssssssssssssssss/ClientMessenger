@@ -12,6 +12,7 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent
     registrationForm = new RegistrationForm(socket, this);
 
     setCentralWidget(loginForm);
+
     connect(loginForm, &LoginForm::registerRequested, this, &MainWindow::showRegistrationForm);
     connect(registrationForm, &RegistrationForm::backRequested, this, &MainWindow::showLoginForm);
 
@@ -96,7 +97,7 @@ void MainWindow::showMessengerForm()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     QMessageBox::StandardButton resBtn = QMessageBox::question(this, tr("Подтверждение"),
-        tr("Вы уверены, что хотите закрыть мессенджер?"), QMessageBox::No | QMessageBox::Yes, QMessageBox::Yes);
+                                                               tr("Вы уверены, что хотите закрыть мессенджер?"), QMessageBox::No | QMessageBox::Yes, QMessageBox::Yes);
     if (resBtn != QMessageBox::Yes)
     {
         event->ignore();
