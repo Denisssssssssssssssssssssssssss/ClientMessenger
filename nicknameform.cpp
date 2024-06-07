@@ -8,18 +8,20 @@ NicknameForm::NicknameForm(QWidget *parent) : QWidget(parent)
     QFont labelFont = instructionsLabel->font();
     labelFont.setPointSize(14);
     instructionsLabel->setFont(labelFont);
-    instructionsLabel->setAlignment(Qt::AlignCenter);
 
     nicknameEdit = new QLineEdit();
     nicknameEdit->setPlaceholderText(tr("Ввод..."));
+    nicknameEdit->setFixedWidth(200);
 
     saveButton = new QPushButton(tr("Сохранить"));
+    saveButton->setFixedWidth(120);
 
     // Размещение виджетов в слое компоновки
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->addWidget(instructionsLabel);
     layout->addWidget(nicknameEdit);
     layout->addWidget(saveButton);
+    layout->setAlignment(Qt::AlignCenter);
 
     // Подключение сигнала от кнопки к слоту saveNickname
     connect(saveButton, &QPushButton::clicked, this, &NicknameForm::saveNickname);

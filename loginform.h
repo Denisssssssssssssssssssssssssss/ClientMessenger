@@ -35,6 +35,7 @@ private slots:
 public:
     explicit LoginForm(QTcpSocket *socket, QWidget *parent = nullptr);
     QString getLogin();
+    void connectSocket();
 
 signals:
     void registerRequested(); //Сигнал для перехода к форме регистрации

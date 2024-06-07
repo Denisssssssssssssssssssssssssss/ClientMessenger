@@ -24,14 +24,16 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent
     connect(loginForm, &LoginForm::loginSuccess, this, &MainWindow::onLoginSuccess);
 
     //connect(this, &MainWindow::checkNicknameStatus, this, &MainWindow::isNicknameNewUser);
-    connect(socket, &QTcpSocket::readyRead, this, &MainWindow::receiveNicknameStatus);
 
     setWindowTitle(tr("Вход"));
+    loginForm->connectSocket();
 }
 
 //Слот для отображения формы авторизации
 void MainWindow::showLoginForm()
 {
+    disconnect(socket, nullptr, this, nullptr);
+
     if (centralWidget()->layout())
     {
         centralWidget()->layout()->removeWidget(registrationForm); //Удаляет виджет из лейаута
@@ -39,11 +41,13 @@ void MainWindow::showLoginForm()
     registrationForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
     setCentralWidget(loginForm); //Теперь устанавливаем loginForm как центральный виджет
     setWindowTitle(tr("Вход"));
+    loginForm->connectSocket();
 }
 
 //Слот для отображения формы регистрации
 void MainWindow::showRegistrationForm()
 {
+    disconnect(socket, nullptr, this, nullptr);
     if (centralWidget()->layout())
     {
         centralWidget()->layout()->removeWidget(loginForm); //Удаляет виджет из лейаута
@@ -51,6 +55,7 @@ void MainWindow::showRegistrationForm()
     loginForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
     setCentralWidget(registrationForm); //Теперь установаем registrationForm как центральный виджет
     setWindowTitle(tr("Регистрация"));
+    registrationForm->connectSocket();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -71,6 +76,7 @@ void MainWindow::onLoginSuccess() {
     loginForm->hide(); // Скрыть LoginForm
     login = loginForm->getLogin(); // Предположим, что у вас есть метод получения логина
     qDebug() << login << "\n";
+    connect(socket, &QTcpSocket::readyRead, this, &MainWindow::receiveNicknameStatus);
     isNicknameNewUser();
 }
 
@@ -103,10 +109,15 @@ void MainWindow::receiveNicknameStatus() {
     if (response.contains("nickname") && response["nickname"].toString() == "New user") {
         qDebug() << "New user\n";
         qDebug() << response["nickname"].toString();
+
+        //передать подключение
+        disconnect(socket, nullptr, this, nullptr);
         showNicknameForm();
     } else {
         qDebug() << "Not new user\n";
         qDebug() << response["nickname"].toString();
+        //передать подключение
+        disconnect(socket, nullptr, this, nullptr);
         showMessengerForm();
     }
 }

@@ -151,6 +151,7 @@ void RegistrationForm::backButtonClicked()
     loginEdit->clear();
     passwordEdit->clear();
     passwordEditAgain->clear();
+    disconnect(socket, nullptr, this, nullptr);
     emit backRequested();
 }
 
@@ -196,7 +197,7 @@ void RegistrationForm::registerUser()
     QByteArray dataArray = QJsonDocument(registrationRequest).toJson(QJsonDocument::Compact);
 
     // Отправка данных на сервер
-    connect(socket, &QTcpSocket::readyRead, this, &RegistrationForm::handleServerResponse);
+    //connect(socket, &QTcpSocket::readyRead, this, &RegistrationForm::handleServerResponse);
     socket->write(dataArray);
     socket->flush(); // Ожидание отправки данных
 
@@ -229,12 +230,15 @@ void RegistrationForm::handleServerResponse()
     QJsonDocument jsonDoc(QJsonDocument::fromJson(responseData));
     QJsonObject jsonObj = jsonDoc.object();
 
-    disconnect(socket, &QTcpSocket::readyRead, this, &RegistrationForm::handleServerResponse);
-
     if (jsonObj.contains("status") && jsonObj["status"].toString() == "success") {
         QMessageBox::information(this, tr("Регистрация успешна"), tr("Регистрация прошла успешно!"));
         emit backRequested();  // Предположим, что этот сигнал заставит MainWindow показать LoginForm
     } else {
         QMessageBox::critical(this, tr("Ошибка регистрации"), tr("Данный логин уже используется. Придумайте другой."));
     }
+}
+
+void RegistrationForm::connectSocket() {
+    // Connect again when RegistrationForm is shown
+    connect(socket, &QTcpSocket::readyRead, this, &RegistrationForm::handleServerResponse);
 }

@@ -44,6 +44,7 @@ private slots:
 
 public:
     explicit RegistrationForm(QTcpSocket *socket, QWidget *parent = nullptr);
+    void connectSocket();
 
 signals:
     void backRequested();

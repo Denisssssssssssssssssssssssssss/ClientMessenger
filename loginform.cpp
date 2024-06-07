@@ -72,7 +72,7 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
 
     connect(registerLabel, &QLabel::linkActivated, this, &LoginForm::onRegisterClicked);
     connect(loginButton, &QPushButton::clicked, this, &LoginForm::attemptLogin);
-    connect(socket, &QTcpSocket::readyRead, this, &LoginForm::handleServerResponse);  // Подключаем обработчик
+    //connect(socket, &QTcpSocket::readyRead, this, &LoginForm::handleServerResponse);  // Подключаем обработчик
 
 }
 
@@ -99,6 +99,7 @@ void LoginForm::onRegisterClicked()
     // Используется для эмитирования сигнала при нажатии на ссылку регистрации
     loginEdit->clear();
     passwordEdit->clear();
+    disconnect(socket, nullptr, this, nullptr);
     emit registerRequested();
 }
 
@@ -137,7 +138,6 @@ void LoginForm::attemptLogin()
 void LoginForm::handleServerResponse()
 {
     QByteArray responseData = socket->readAll();
-    disconnect(socket, &QTcpSocket::readyRead, this, &LoginForm::handleServerResponse); // Отключаем после получения ответа
 
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
@@ -147,6 +147,7 @@ void LoginForm::handleServerResponse()
 
         login = loginEdit->text();
         qDebug() << login << "\n";
+        disconnect(socket, nullptr, this, nullptr);
         emit loginSuccess();
     } else {
         // В случае ошибки очистим поля ввода и покажем сообщение
@@ -159,4 +160,9 @@ void LoginForm::handleServerResponse()
 QString LoginForm::getLogin()
 {
     return login;
+}
+
+void LoginForm::connectSocket() {
+    // Connect again when LoginForm is shown
+    connect(socket, &QTcpSocket::readyRead, this, &LoginForm::handleServerResponse);
 }

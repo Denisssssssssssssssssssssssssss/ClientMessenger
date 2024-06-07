@@ -13,9 +13,7 @@ MessengerForm::MessengerForm(QWidget *parent) : QWidget(parent)
     // Верхний слой с кнопками и полем поиска
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(settingsButton);
-    topLayout->addStretch(); // Добавить пространство между кнопками и полем поиска
     topLayout->addWidget(searchEdit);
-    topLayout->addStretch(); // Добавить пространство между полем поиска и концом слоя
     topLayout->addWidget(findButton);
 
     // Основной слой компоновки
