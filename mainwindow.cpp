@@ -90,6 +90,7 @@ void MainWindow::showMessengerForm()
     }
     setCentralWidget(messengerForm);
     setWindowTitle(tr("Мессенджер"));
+    messengerForm->connectSocket();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

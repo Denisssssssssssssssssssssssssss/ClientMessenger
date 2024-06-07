@@ -8,7 +8,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-RegistrationForm::RegistrationForm(QTcpSocket *socket, QWidget *parent) : socket(socket)
+RegistrationForm::RegistrationForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), socket(socket)
 {
     imageLabel = new QLabel(this);
     QPixmap pixmap(":/images/icon-info.png");
