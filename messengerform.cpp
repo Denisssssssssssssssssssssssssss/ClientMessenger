@@ -1,6 +1,6 @@
 #include "MessengerForm.h"
 
-MessengerForm::MessengerForm(QWidget *parent) : QWidget(parent)
+MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent) : QWidget(parent), socket(socket), login(login)
 {
     // Создание элементов интерфейса
     settingsButton = new QPushButton(tr("Настройки"));

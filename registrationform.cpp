@@ -235,6 +235,9 @@ void RegistrationForm::handleServerResponse()
         emit backRequested();  // Предположим, что этот сигнал заставит MainWindow показать LoginForm
     } else {
         QMessageBox::critical(this, tr("Ошибка регистрации"), tr("Данный логин уже используется. Придумайте другой."));
+        loginEdit->clear();
+        passwordEdit->clear();
+        passwordEditAgain->clear();
     }
 }
 

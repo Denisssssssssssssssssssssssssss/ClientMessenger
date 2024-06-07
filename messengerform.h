@@ -7,13 +7,15 @@
 #include <QListWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QTcpSocket>
+#include <QString>
 
 class MessengerForm : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit MessengerForm(QWidget *parent = nullptr);
+    explicit MessengerForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
 
 private slots:
     void openSettings();
@@ -26,6 +28,8 @@ private:
     QLineEdit *searchEdit;
     QListWidget *chatList;
     QPushButton *logOutButton;
+    QTcpSocket *socket;
+    QString login;
 };
 
 #endif // MESSENGERFORM_H

@@ -72,7 +72,6 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
 
     connect(registerLabel, &QLabel::linkActivated, this, &LoginForm::onRegisterClicked);
     connect(loginButton, &QPushButton::clicked, this, &LoginForm::attemptLogin);
-    //connect(socket, &QTcpSocket::readyRead, this, &LoginForm::handleServerResponse);  // Подключаем обработчик
 
 }
 

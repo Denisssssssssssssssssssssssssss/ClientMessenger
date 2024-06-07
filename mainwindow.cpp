@@ -11,9 +11,6 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent
     loginForm = new LoginForm(socket, this);
     registrationForm = new RegistrationForm(socket, this);
 
-    nicknameForm = new NicknameForm(this);
-    messengerForm = new MessengerForm(this);
-
     setCentralWidget(loginForm);
     connect(loginForm, &LoginForm::registerRequested, this, &MainWindow::showRegistrationForm);
     connect(registrationForm, &RegistrationForm::backRequested, this, &MainWindow::showLoginForm);
@@ -23,8 +20,6 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent
 
     connect(loginForm, &LoginForm::loginSuccess, this, &MainWindow::onLoginSuccess);
 
-    //connect(this, &MainWindow::checkNicknameStatus, this, &MainWindow::isNicknameNewUser);
-
     setWindowTitle(tr("Вход"));
     loginForm->connectSocket();
 }
@@ -33,7 +28,6 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent
 void MainWindow::showLoginForm()
 {
     disconnect(socket, nullptr, this, nullptr);
-
     if (centralWidget()->layout())
     {
         centralWidget()->layout()->removeWidget(registrationForm); //Удаляет виджет из лейаута
@@ -56,6 +50,46 @@ void MainWindow::showRegistrationForm()
     setCentralWidget(registrationForm); //Теперь установаем registrationForm как центральный виджет
     setWindowTitle(tr("Регистрация"));
     registrationForm->connectSocket();
+}
+
+void MainWindow::showNicknameForm()
+{
+    disconnect(socket, nullptr, this, nullptr);
+    nicknameForm = new NicknameForm(socket, login, this);
+    if (centralWidget()->layout())
+    {
+        centralWidget()->layout()->removeWidget(loginForm); //Удаляет виджет из лейаута
+    }
+    loginForm->setParent(nullptr);
+    setCentralWidget(nicknameForm);
+    setWindowTitle(tr("Обновление имени"));
+    connect(nicknameForm, &NicknameForm::nicknameUpdated, this, &MainWindow::showMessengerForm);
+    nicknameForm->connectSocket();
+}
+
+void MainWindow::showMessengerForm()
+{
+    disconnect(socket, nullptr, this, nullptr);
+    messengerForm = new MessengerForm(socket, login, this);
+    QWidget *currentCentralWidget = centralWidget();
+    if(currentCentralWidget == loginForm)
+    {
+        if (centralWidget()->layout())
+        {
+            centralWidget()->layout()->removeWidget(loginForm); //Удаляет виджет из лейаута
+        }
+        loginForm->setParent(nullptr);
+    }
+    if(currentCentralWidget == nicknameForm)
+    {
+        if (centralWidget()->layout())
+        {
+            centralWidget()->layout()->removeWidget(nicknameForm); //Удаляет виджет из лейаута
+        }
+        nicknameForm->setParent(nullptr);
+    }
+    setCentralWidget(messengerForm);
+    setWindowTitle(tr("Мессенджер"));
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -120,49 +154,4 @@ void MainWindow::receiveNicknameStatus() {
         disconnect(socket, nullptr, this, nullptr);
         showMessengerForm();
     }
-}
-
-
-void MainWindow::showNicknameForm() {
-    // Удаляем текущий центральный виджет, если таковой имеется
-    QWidget *currentWidget = centralWidget();
-    setCentralWidget(nullptr);
-    if (currentWidget && currentWidget != nicknameForm) {
-        currentWidget->setParent(nullptr); // Отсекаем текущий виджет от MainWindow
-        delete currentWidget; // Важно очищать память
-    }
-
-    // Если nicknameForm еще не создан, создаем новый экземпляр
-    if (!nicknameForm) {
-        nicknameForm = new NicknameForm(this);
-        // Здесь можно подключить сигналы от nicknameForm к нужным слотам
-    }
-
-    // Устанавливаем nicknameForm как центральный виджет
-    setCentralWidget(nicknameForm);
-
-    // Можно добавить обновление заголовка окна при необходимости
-    setWindowTitle(tr("Обновление никнейма"));
-}
-
-void MainWindow::showMessengerForm() {
-    // Удаляем текущий центральный виджет, если таковой имеется
-    QWidget *currentWidget = centralWidget();
-    setCentralWidget(nullptr);
-    if (currentWidget && currentWidget != messengerForm) {
-        currentWidget->setParent(nullptr); // Отсекаем текущий виджет от MainWindow
-        delete currentWidget; // Важно очищать память
-    }
-
-    // Если messengerForm еще не создан, создаем новый экземпляр
-    if (!messengerForm) {
-        messengerForm = new MessengerForm(this);
-        // Здесь можно подключить сигналы от messengerForm к нужным слотам
-    }
-
-    // Устанавливаем messengerForm как центральный виджет
-    setCentralWidget(messengerForm);
-
-    // Можно добавить обновление заголовка окна при необходимости
-    setWindowTitle(tr("Мессенджер"));
 }
