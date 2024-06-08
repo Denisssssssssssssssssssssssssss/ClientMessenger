@@ -117,6 +117,7 @@ void MainWindow::showSettingsForm()
     messengerForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
     setCentralWidget(settingsForm);
     setWindowTitle(tr("Настройки"));
+    settingsForm->connectSocket();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

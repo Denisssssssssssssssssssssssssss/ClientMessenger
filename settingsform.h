@@ -18,7 +18,9 @@ private:
     QPushButton *backButton;
     QPushButton *blacklistButton;
     QPushButton *changeLoginButton;
+    QPushButton *saveLoginButton;
     QPushButton *changeNameButton;
+    QPushButton *saveNameButton;
     QPushButton *changePasswordButton;
     QLabel *loginLabel;
     QLabel *nameLabel;
@@ -27,9 +29,16 @@ private:
 
 public:
     explicit SettingsForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
+    void connectSocket();
 
 signals:
 
+private slots:
+    void saveName();
+    void saveLogin();
+    void enableNameEdit();
+    void enableLoginEdit();
+    void onServerResponse();
 };
 
 #endif // SETTINGSFORM_H

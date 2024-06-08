@@ -90,6 +90,7 @@ void MessengerForm::onReadyRead()
 
 void MessengerForm::openSettings()
 {
+    disconnect(socket, nullptr, this, nullptr);
     emit settingsRequested(); // Испускаем сигнал, который должен обрабатываться MainWindow
 }
 
