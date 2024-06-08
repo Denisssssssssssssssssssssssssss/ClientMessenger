@@ -38,6 +38,7 @@ private:
 
 signals:
     void settingsRequested();
+    void logoutRequested();
 };
 
 #endif // MESSENGERFORM_H

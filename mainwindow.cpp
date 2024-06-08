@@ -29,12 +29,26 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent
 void MainWindow::showLoginForm()
 {
     disconnect(socket, nullptr, this, nullptr);
-    if (centralWidget()->layout())
+    QWidget *currentCentralWidget = centralWidget();
+    if(currentCentralWidget == registrationForm)
     {
-        centralWidget()->layout()->removeWidget(registrationForm); //Удаляет виджет из лейаута
+        if (centralWidget()->layout())
+        {
+            centralWidget()->layout()->removeWidget(registrationForm); //Удаляет виджет из лейаута
+             registrationForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+        }
     }
-    registrationForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+    if(currentCentralWidget == messengerForm)
+    {
+        if (centralWidget()->layout())
+        {
+            centralWidget()->layout()->removeWidget(messengerForm); //Удаляет виджет из лейаута
+            messengerForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+        }
+    }
     setCentralWidget(loginForm); //Теперь устанавливаем loginForm как центральный виджет
+    if(currentCentralWidget == messengerForm)
+        loginForm->show();
     setWindowTitle(tr("Вход"));
     loginForm->connectSocket();
 }
@@ -128,6 +142,7 @@ void MainWindow::onLoginSuccess() {
     nicknameForm = new NicknameForm(socket, login, this);
     connect(messengerForm, &MessengerForm::settingsRequested, this, &MainWindow::showSettingsForm);
     connect(socket, &QTcpSocket::readyRead, this, &MainWindow::receiveNicknameStatus);
+    connect(messengerForm, &MessengerForm::logoutRequested, this, &MainWindow::handleLogout);
     isNicknameNewUser();
 }
 
@@ -171,5 +186,10 @@ void MainWindow::receiveNicknameStatus() {
         disconnect(socket, nullptr, this, nullptr);
         showMessengerForm();
     }
+}
+
+void MainWindow::handleLogout()
+{
+    showLoginForm();
 }
 

@@ -36,11 +36,6 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     connect(searchEdit, &QLineEdit::textChanged, this, &MessengerForm::onSearchTextChanged);
 }
 
-void MessengerForm::logOut()
-{
-    // Здесь код для выхода из учетной записи или приложения
-}
-
 void MessengerForm::findUsers() {
     QString searchText = searchEdit->text().trimmed();
 
@@ -107,5 +102,17 @@ void MessengerForm::onSearchTextChanged(const QString &text) {
         // обновляется только после нажатия на кнопку "Найти",
         // то данный блок кода может быть опущен.
         findUsers();  // Если вы хотите сразу искать, как только пользователь начинает вводить текст
+    }
+}
+
+void MessengerForm::logOut()
+{
+    QMessageBox::StandardButton reply = QMessageBox::question(this, tr("Выход"),
+                                                              tr("Вы уверены, что хотите выйти?"),
+                                                              QMessageBox::Yes | QMessageBox::No);
+
+    if (reply == QMessageBox::Yes) {
+        disconnect(socket, nullptr, this, nullptr);
+        emit logoutRequested(); // Испускаем сигнал, что пользователь хочет выйти
     }
 }

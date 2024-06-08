@@ -36,6 +36,7 @@ private slots:
     void onLoginSuccess();
     void receiveNicknameStatus(); // Слот без параметров
     void showSettingsForm();
+    void handleLogout();
 
 protected:
     void closeEvent(QCloseEvent *event) override;

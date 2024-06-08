@@ -147,6 +147,8 @@ void LoginForm::handleServerResponse()
         login = loginEdit->text();
         qDebug() << login << "\n";
         disconnect(socket, nullptr, this, nullptr);
+        loginEdit->clear();
+        passwordEdit->clear();
         emit loginSuccess();
     } else {
         // В случае ошибки очистим поля ввода и покажем сообщение
