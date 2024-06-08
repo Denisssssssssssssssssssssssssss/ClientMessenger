@@ -38,11 +38,6 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     connect(logOutButton, &QPushButton::clicked, this, &MessengerForm::logOut);
 }
 
-void MessengerForm::openSettings()
-{
-    // Здесь код для открытия настроек
-}
-
 void MessengerForm::logOut()
 {
     // Здесь код для выхода из учетной записи или приложения
@@ -58,7 +53,8 @@ void MessengerForm::findUsers() {
     // Формируем JSON объект для отправки запроса
     QJsonObject request{
         {"type", "find_users"},
-        {"searchText", searchText}
+        {"searchText", searchText},
+        {"login", login} // Добавляем логин пользователя, отправляющего запрос
     };
 
     // Преобразование JSON объекта в строку и отправка
@@ -98,3 +94,7 @@ void MessengerForm::onReadyRead()
     }
 }
 
+void MessengerForm::openSettings()
+{
+    emit settingsRequested(); // Испускаем сигнал, который должен обрабатываться MainWindow
+}

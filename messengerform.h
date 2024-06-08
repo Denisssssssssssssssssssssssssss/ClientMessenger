@@ -36,6 +36,8 @@ private:
     QTcpSocket *socket;
     QString login;
 
+signals:
+    void settingsRequested();
 };
 
 #endif // MESSENGERFORM_H

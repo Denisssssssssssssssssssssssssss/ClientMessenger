@@ -56,7 +56,7 @@ void MainWindow::showRegistrationForm()
 void MainWindow::showNicknameForm()
 {
     disconnect(socket, nullptr, this, nullptr);
-    nicknameForm = new NicknameForm(socket, login, this);
+
     if (centralWidget()->layout())
     {
         centralWidget()->layout()->removeWidget(loginForm); //Удаляет виджет из лейаута
@@ -71,7 +71,6 @@ void MainWindow::showNicknameForm()
 void MainWindow::showMessengerForm()
 {
     disconnect(socket, nullptr, this, nullptr);
-    messengerForm = new MessengerForm(socket, login, this);
     QWidget *currentCentralWidget = centralWidget();
     if(currentCentralWidget == loginForm)
     {
@@ -94,6 +93,18 @@ void MainWindow::showMessengerForm()
     messengerForm->connectSocket();
 }
 
+void MainWindow::showSettingsForm()
+{
+    disconnect(socket, nullptr, this, nullptr);
+    if (centralWidget()->layout())
+    {
+        centralWidget()->layout()->removeWidget(messengerForm); //Удаляет виджет из лейаута
+    }
+    messengerForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+    setCentralWidget(settingsForm);
+    setWindowTitle(tr("Настройки"));
+}
+
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     QMessageBox::StandardButton resBtn = QMessageBox::question(this, tr("Подтверждение"),
@@ -112,6 +123,10 @@ void MainWindow::onLoginSuccess() {
     loginForm->hide(); // Скрыть LoginForm
     login = loginForm->getLogin(); // Предположим, что у вас есть метод получения логина
     qDebug() << login << "\n";
+    settingsForm = new SettingsForm(socket, login, this);
+    messengerForm = new MessengerForm(socket, login, this);
+    nicknameForm = new NicknameForm(socket, login, this);
+    connect(messengerForm, &MessengerForm::settingsRequested, this, &MainWindow::showSettingsForm);
     connect(socket, &QTcpSocket::readyRead, this, &MainWindow::receiveNicknameStatus);
     isNicknameNewUser();
 }
@@ -157,3 +172,4 @@ void MainWindow::receiveNicknameStatus() {
         showMessengerForm();
     }
 }
+
