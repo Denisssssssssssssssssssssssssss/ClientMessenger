@@ -8,6 +8,7 @@
 #include <QByteArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 
 SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) : socket(socket), login(login)
 {
@@ -30,7 +31,6 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
 
     nameLabel = new QLabel(tr("Ваше имя:"), this);
     nameEdit = new QLineEdit(this);
-    nameEdit->setReadOnly(true); // Поле для ввода, в котором нельзя писать
     nameEdit->setFixedWidth(200);
 
     changeNameButton = new QPushButton(tr("Сменить имя"), this);
@@ -78,6 +78,11 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
     connect(saveNameButton, &QPushButton::clicked, this, &SettingsForm::saveName);
     connect(backButton, &QPushButton::clicked, this, &SettingsForm::handleBackClick);
 
+    requestNickname();
+    qDebug()<< "NICK: " << nickname << "\n";
+    nameEdit->setText(nickname);
+    nameEdit->setReadOnly(true); // Поле для ввода, в котором нельзя писать
+
     setLayout(mainLayout);
 }
 
@@ -97,7 +102,7 @@ void SettingsForm::saveLogin() {
     QString newLogin = loginEdit->text();
 
     // Проверяем, что новый логин не пуст
-    if(newLogin.isEmpty() && newLogin != "New user")
+    if(newLogin.isEmpty() || !loginContainsOnlyAllowedCharacters(login))
     {
         QMessageBox::warning(this, tr("Ошибка"), tr("Указан недопустимый логин."));
         return;
@@ -115,12 +120,25 @@ void SettingsForm::saveLogin() {
 }
 
 void SettingsForm::saveName() {
-    // Здесь код для сохранения нового имени
-    // После сохранения:
-    nameEdit->setReadOnly(true); // Снова делаем поле ввода не доступным
-    saveNameButton->hide(); // Скрываем кнопку сохранения
-    changeNameButton->show(); // Показываем кнопку изменения
+    QString newName = nameEdit->text();
+
+    // Проверяем, что новое имя не пустое
+    if(newName.isEmpty() || newName == "New user") {
+        QMessageBox::warning(this, tr("Ошибка"), tr("Указано недопустимое имя."));
+        return;
+    }
+
+    // Отправляем запрос на сервер для обновления имени
+    QJsonObject request;
+    request["type"] = "update_nickname";
+    request["login"] = login; // Текущий логин пользователя, как идентификатор
+    request["nickname"] = newName; // Новый nickname
+
+    QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
+    socket->write(requestData);
+    socket->flush();
 }
+
 
 void SettingsForm::onServerResponse()
 {
@@ -128,26 +146,52 @@ void SettingsForm::onServerResponse()
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
 
-    if (jsonObj.contains("status")) {
+    if (jsonObj.contains("status"))
+    {
         QString status = jsonObj["status"].toString();
 
-        if (status == "success") {
+        if (status == "success" && jsonObj["type"].toString() == "update_login") {
             QMessageBox::information(this, tr("Успех"), tr("Логин успешно обновлён."));
             // Обновляем текущий логин
             login = loginEdit->text();
-        } else if (status == "error") {
+            loginEdit->setReadOnly(true);
+            saveLoginButton->hide();
+            changeLoginButton->show();
+        }
+        else if (status == "error" && jsonObj["type"].toString() == "update_login")
+        {
             QString message = jsonObj.contains("message") ? jsonObj["message"].toString() :
                                   tr("Логин не соответствует правилам, либо уже используется.");
             QMessageBox::warning(this, tr("Ошибка"), message);
             // Возвращаем старое значение логина в поле, если ошибка
             loginEdit->setText(login);
         }
-    }
+        if (status == "success" && jsonObj["type"].toString() == "update_nickname")
+        {
+            qDebug() << "nickname has been updated\n";
+            QMessageBox::information(this, tr("Успех"), tr("Имя пользователя успешно обновлено."));
+            nameEdit->setReadOnly(true);
+            saveNameButton->hide();
+            changeNameButton->show();
+        }
+        else if (status == "error" && jsonObj["type"].toString() == "update_nickname")
+        {
+            QString message = jsonObj["message"].toString();
+            QMessageBox::warning(this, tr("Ошибка"), message);
+        }
 
-    // После обработки ответа возвращаем интерфейс в исходное состояние
-    loginEdit->setReadOnly(true);
-    saveLoginButton->hide();
-    changeLoginButton->show();
+        if (jsonObj["type"].toString() == "check_nickname")
+        {
+            if (jsonObj.contains("nickname")) {
+                nickname = jsonObj["nickname"].toString();
+                //nameEdit->setText(nickname);  // Устанавливаем полученный nickname
+            }
+        }
+        else if (status == "error") {
+            QString message = jsonObj.contains("message") ? jsonObj["message"].toString() : tr("Произошла ошибка.");
+            QMessageBox::warning(this, tr("Ошибка"), message);
+        }
+    }
 }
 
 void SettingsForm::connectSocket() {
@@ -162,4 +206,23 @@ void SettingsForm::handleBackClick()
 
     // Испускаем сигнал, который сообщит MainWindow, что нужно вернуться к MessengerForm
     emit backToMessengerFormRequested();
+}
+
+bool SettingsForm::loginContainsOnlyAllowedCharacters(const QString &login)
+{
+    QRegularExpression loginRegExp("^[A-Za-z\\d_-]+$"); //Регулярное выражение для допустимых символов в логине
+    return login.contains(loginRegExp);
+}
+
+void SettingsForm::requestNickname()
+{
+    if (!login.isEmpty()) {
+        QJsonObject request;
+        request["type"] = "check_nickname";
+        request["login"] = login;
+
+        QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
+        socket->write(requestData);
+        socket->flush();
+    }
 }

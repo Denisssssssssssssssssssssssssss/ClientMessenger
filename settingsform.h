@@ -15,6 +15,7 @@ class SettingsForm : public QWidget
 private:
     QTcpSocket *socket;
     QString login;
+    QString nickname;
     QPushButton *backButton;
     QPushButton *blacklistButton;
     QPushButton *changeLoginButton;
@@ -26,6 +27,9 @@ private:
     QLabel *nameLabel;
     QLineEdit *loginEdit;
     QLineEdit *nameEdit;
+
+    bool loginContainsOnlyAllowedCharacters(const QString &login);
+    void requestNickname();
 
 public:
     explicit SettingsForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
