@@ -102,6 +102,14 @@ void MainWindow::showMessengerForm()
         }
         nicknameForm->setParent(nullptr);
     }
+    if(currentCentralWidget == settingsForm)
+    {
+        if (centralWidget()->layout())
+        {
+            centralWidget()->layout()->removeWidget(settingsForm); //Удаляет виджет из лейаута
+        }
+        settingsForm->setParent(nullptr);
+    }
     setCentralWidget(messengerForm);
     setWindowTitle(tr("Мессенджер"));
     messengerForm->connectSocket();
@@ -144,6 +152,7 @@ void MainWindow::onLoginSuccess() {
     connect(messengerForm, &MessengerForm::settingsRequested, this, &MainWindow::showSettingsForm);
     connect(socket, &QTcpSocket::readyRead, this, &MainWindow::receiveNicknameStatus);
     connect(messengerForm, &MessengerForm::logoutRequested, this, &MainWindow::handleLogout);
+    connect(settingsForm, &SettingsForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);
     isNicknameNewUser();
 }
 

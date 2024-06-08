@@ -76,6 +76,7 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
     connect(saveLoginButton, &QPushButton::clicked, this, &SettingsForm::saveLogin);
     connect(changeNameButton, &QPushButton::clicked, this, &SettingsForm::enableNameEdit);
     connect(saveNameButton, &QPushButton::clicked, this, &SettingsForm::saveName);
+    connect(backButton, &QPushButton::clicked, this, &SettingsForm::handleBackClick);
 
     setLayout(mainLayout);
 }
@@ -152,4 +153,13 @@ void SettingsForm::onServerResponse()
 void SettingsForm::connectSocket() {
     // Connect again when RegistrationForm is shown
     connect(socket, &QTcpSocket::readyRead, this, &SettingsForm::onServerResponse);
+}
+
+void SettingsForm::handleBackClick()
+{
+    // Отключаемся от сокета, чтобы не получать данные в этом виджете
+    disconnect(socket, &QTcpSocket::readyRead, this, &SettingsForm::onServerResponse);
+
+    // Испускаем сигнал, который сообщит MainWindow, что нужно вернуться к MessengerForm
+    emit backToMessengerFormRequested();
 }

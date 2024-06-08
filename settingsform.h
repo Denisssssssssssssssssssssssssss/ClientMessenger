@@ -32,6 +32,7 @@ public:
     void connectSocket();
 
 signals:
+    void backToMessengerFormRequested();
 
 private slots:
     void saveName();
@@ -39,6 +40,7 @@ private slots:
     void enableNameEdit();
     void enableLoginEdit();
     void onServerResponse();
+    void handleBackClick();
 };
 
 #endif // SETTINGSFORM_H
