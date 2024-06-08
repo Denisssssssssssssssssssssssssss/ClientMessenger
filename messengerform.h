@@ -25,10 +25,10 @@ private slots:
     void findUsers();
     void updateUserList(QJsonArray users);
     void onReadyRead(); // Новый слот для чтения данных из сокета
+    void onSearchTextChanged(const QString &text);
 
 private:
     QPushButton *settingsButton;
-    QPushButton *findButton;
     QLineEdit *searchEdit;
     QListWidget *chatList; //Список существующих чатов
     QListWidget *userList; //Список для найденных пользователей

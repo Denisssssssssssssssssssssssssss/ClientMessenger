@@ -11,7 +11,6 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
 {
     // Создание элементов интерфейса
     settingsButton = new QPushButton(tr("Настройки"));
-    findButton = new QPushButton(tr("Найти"));
     searchEdit = new QLineEdit();
     searchEdit->setPlaceholderText(tr("Поиск..."));
     chatList = new QListWidget();
@@ -22,7 +21,6 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(settingsButton);
     topLayout->addWidget(searchEdit);
-    topLayout->addWidget(findButton);
 
     // Основной слой компоновки
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -34,8 +32,8 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
 
     // Подключение нажатий кнопок к слотам
     connect(settingsButton, &QPushButton::clicked, this, &MessengerForm::openSettings);
-    connect(findButton, &QPushButton::clicked, this, &MessengerForm::findUsers);
     connect(logOutButton, &QPushButton::clicked, this, &MessengerForm::logOut);
+    connect(searchEdit, &QLineEdit::textChanged, this, &MessengerForm::onSearchTextChanged);
 }
 
 void MessengerForm::logOut()
@@ -45,10 +43,6 @@ void MessengerForm::logOut()
 
 void MessengerForm::findUsers() {
     QString searchText = searchEdit->text().trimmed();
-    if (searchText.isEmpty()) {
-        QMessageBox::warning(this, tr("Внимание"), tr("Поле поиска не может быть пустым."));
-        return;
-    }
 
     // Формируем JSON объект для отправки запроса
     QJsonObject request{
@@ -68,13 +62,18 @@ void MessengerForm::findUsers() {
 }
 
 void MessengerForm::updateUserList(QJsonArray users) {
-    userList->clear(); // Очистка списка перед заполнением
+
+    userList->clear();
 
     for (const QJsonValue &value : users) {
         QString user = value.toString();
         new QListWidgetItem(user, userList); // Добавление пользователя в список
     }
+
+    chatList->hide();
+    userList->show();
 }
+
 
 void MessengerForm::connectSocket()
 {
@@ -97,4 +96,16 @@ void MessengerForm::onReadyRead()
 void MessengerForm::openSettings()
 {
     emit settingsRequested(); // Испускаем сигнал, который должен обрабатываться MainWindow
+}
+
+void MessengerForm::onSearchTextChanged(const QString &text) {
+    if (text.isEmpty()) {
+        userList->hide();
+        chatList->show();
+    } else {
+        // Если это не нужно, так как список пользователей
+        // обновляется только после нажатия на кнопку "Найти",
+        // то данный блок кода может быть опущен.
+        findUsers();  // Если вы хотите сразу искать, как только пользователь начинает вводить текст
+    }
 }
