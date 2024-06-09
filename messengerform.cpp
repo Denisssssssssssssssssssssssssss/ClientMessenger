@@ -1,11 +1,10 @@
 #include "MessengerForm.h"
-
 #include <QJsonDocument>
 #include <QMessageBox>
 #include <QByteArray>
 #include <QJsonValue>
 #include <QJsonObject>
-
+#include <QListWidgetItem>
 
 MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent) : QWidget(parent), socket(socket), login(login)
 {
@@ -34,94 +33,90 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     connect(settingsButton, &QPushButton::clicked, this, &MessengerForm::openSettings);
     connect(logOutButton, &QPushButton::clicked, this, &MessengerForm::logOut);
     connect(searchEdit, &QLineEdit::textChanged, this, &MessengerForm::onSearchTextChanged);
-    connect(userList, &QListWidget::itemClicked, this, &MessengerForm::openChat); // Подключаем слот открытия чата
+    connect(userList, &QListWidget::itemClicked, this, &MessengerForm::openChat);
 }
 
-
-void MessengerForm::findUsers() {
+void MessengerForm::findUsers()
+{
     QString searchText = searchEdit->text().trimmed();
-
-    // Формируем JSON объект для отправки запроса
     QJsonObject request{
         {"type", "find_users"},
         {"searchText", searchText},
-        {"login", login} // Добавляем логин пользователя, отправляющего запрос
+        {"login", login}
     };
-
-    // Преобразование JSON объекта в строку и отправка
     QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
-
-    // Показываем userList и скрываем chatList
-    userList->show();
-    chatList->hide();
 }
 
-void MessengerForm::updateUserList(QJsonArray users) {
-
+void MessengerForm::updateUserList(QJsonArray users)
+{
     userList->clear();
-
     for (const QJsonValue &value : users) {
-        QString user = value.toString();
-        new QListWidgetItem(user, userList); // Добавление пользователя в список
+        QJsonObject userObj = value.toObject();
+        QString nickname = userObj["nickname"].toString();
+        QString login = userObj["login"].toString();
+        QListWidgetItem *userItem = new QListWidgetItem(nickname);
+        userItem->setData(Qt::UserRole, login);  // Сохраняем login пользователя
+        userItem->setData(Qt::UserRole + 1, nickname);  // Сохраняем nickname пользователя
+        userList->addItem(userItem);
     }
-
     chatList->hide();
     userList->show();
 }
-
 
 void MessengerForm::connectSocket()
 {
     connect(socket, &QTcpSocket::readyRead, this, &MessengerForm::onReadyRead);
 }
 
-
 void MessengerForm::onReadyRead()
 {
     QByteArray responseData = socket->readAll();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
-    qDebug() << "MessengerForm Response data:" << responseData;
     if (jsonObj.contains("users") && jsonObj["users"].isArray()) {
         QJsonArray usersArray = jsonObj["users"].toArray();
-        updateUserList(usersArray); // Передаем массив пользователей в слот
+        updateUserList(usersArray);
     }
 }
 
 void MessengerForm::openSettings()
 {
     disconnect(socket, nullptr, this, nullptr);
-    emit settingsRequested(); // Испускаем сигнал, который должен обрабатываться MainWindow
+    emit settingsRequested();
 }
 
-void MessengerForm::onSearchTextChanged(const QString &text) {
+void MessengerForm::onSearchTextChanged(const QString &text)
+{
     if (text.isEmpty()) {
         userList->hide();
         chatList->show();
     } else {
-        // Если это не нужно, так как список пользователей
-        // обновляется только после нажатия на кнопку "Найти",
-        // то данный блок кода может быть опущен.
-        findUsers();  // Если вы хотите сразу искать, как только пользователь начинает вводить текст
+        findUsers();
     }
 }
 
 void MessengerForm::logOut()
 {
-    QMessageBox::StandardButton reply = QMessageBox::question(this, tr("Выход"),
-                                                              tr("Вы уверены, что хотите выйти?"),
-                                                              QMessageBox::Yes | QMessageBox::No);
-
+    QMessageBox::StandardButton reply = QMessageBox::question(this, tr("Выход"), tr("Вы уверены, что хотите выйти?"), QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
         disconnect(socket, nullptr, this, nullptr);
-        emit logoutRequested(); // Испускаем сигнал, что пользователь хочет выйти
+        emit logoutRequested();
     }
 }
 
 void MessengerForm::openChat(QListWidgetItem *item)
 {
-    QString user = item->text();
-    emit chatRequested(user); // Испускаем сигнал, который должен обрабатываться в MainWindow
+    QString otherUserLogin = item->data(Qt::UserRole).toString(); // Получаем login другого пользователя
+    QString otherUserNickname = item->data(Qt::UserRole + 1).toString(); // Получаем nickname другого пользователя
+    QJsonObject request = {
+        {"type", "create_chat"},
+        {"user1", login},
+        {"user2", otherUserLogin}
+    };
+    QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
+    socket->write(requestData);
+    socket->flush();
+    emit chatRequested(otherUserNickname);
 }
