@@ -126,6 +126,7 @@ void MainWindow::showSettingsForm()
     setCentralWidget(settingsForm);
     setWindowTitle(tr("Настройки"));
     settingsForm->connectSocket();
+    settingsForm->requestNickname();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -176,11 +177,12 @@ void MainWindow::receiveNicknameStatus() {
 
     QByteArray rawData = socket->readAll();
     QJsonDocument doc = QJsonDocument::fromJson(rawData);
+    qDebug() << QJsonDocument(doc).toJson(QJsonDocument::Compact);
     if (!doc.isObject()) {
         return; // Если данные не могут быть разобраны как JSON объект, выходим из метода
     }
     QJsonObject response = doc.object();
-
+    qDebug() << "MessengerForm Response data:" << response;
     // Обработка ответа от сервера
     if (response.contains("nickname") && response["nickname"].toString() == "New user") {
         qDebug() << "New user\n";

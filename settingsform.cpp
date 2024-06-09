@@ -77,9 +77,6 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
     connect(changeNameButton, &QPushButton::clicked, this, &SettingsForm::enableNameEdit);
     connect(saveNameButton, &QPushButton::clicked, this, &SettingsForm::saveName);
     connect(backButton, &QPushButton::clicked, this, &SettingsForm::handleBackClick);
-
-    requestNickname();
-    qDebug()<< "NICK: " << nickname << "\n";
     nameEdit->setText(nickname);
     nameEdit->setReadOnly(true); // Поле для ввода, в котором нельзя писать
 
@@ -145,7 +142,7 @@ void SettingsForm::onServerResponse()
     QByteArray responseData = socket->readAll();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
-
+    qDebug() << "SettingsForm Response data:" << responseData;
     if (jsonObj.contains("status"))
     {
         QString status = jsonObj["status"].toString();
@@ -179,15 +176,14 @@ void SettingsForm::onServerResponse()
             QString message = jsonObj["message"].toString();
             QMessageBox::warning(this, tr("Ошибка"), message);
         }
-
-        if (jsonObj["type"].toString() == "check_nickname")
+        if (status == "success" && jsonObj["type"].toString() == "check_nickname")
         {
             if (jsonObj.contains("nickname")) {
                 nickname = jsonObj["nickname"].toString();
-                //nameEdit->setText(nickname);  // Устанавливаем полученный nickname
+                nameEdit->setText(nickname);  // Устанавливаем полученный nickname
             }
         }
-        else if (status == "error") {
+        else if (status == "error" && jsonObj["type"].toString() == "check_nickname") {
             QString message = jsonObj.contains("message") ? jsonObj["message"].toString() : tr("Произошла ошибка.");
             QMessageBox::warning(this, tr("Ошибка"), message);
         }
@@ -195,7 +191,6 @@ void SettingsForm::onServerResponse()
 }
 
 void SettingsForm::connectSocket() {
-    // Connect again when RegistrationForm is shown
     connect(socket, &QTcpSocket::readyRead, this, &SettingsForm::onServerResponse);
 }
 
@@ -220,7 +215,7 @@ void SettingsForm::requestNickname()
         QJsonObject request;
         request["type"] = "check_nickname";
         request["login"] = login;
-
+        qDebug() << "Nickname requested\n";
         QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
         socket->write(requestData);
         socket->flush();

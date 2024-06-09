@@ -81,7 +81,7 @@ void MessengerForm::onReadyRead()
     QByteArray responseData = socket->readAll();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
-
+    qDebug() << "MessengerForm Response data:" << responseData;
     if (jsonObj.contains("users") && jsonObj["users"].isArray()) {
         QJsonArray usersArray = jsonObj["users"].toArray();
         updateUserList(usersArray); // Передаем массив пользователей в слот

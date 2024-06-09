@@ -29,11 +29,12 @@ private:
     QLineEdit *nameEdit;
 
     bool loginContainsOnlyAllowedCharacters(const QString &login);
-    void requestNickname();
+    //void requestNickname();
 
 public:
     explicit SettingsForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
     void connectSocket();
+    void requestNickname();
 
 signals:
     void backToMessengerFormRequested();
