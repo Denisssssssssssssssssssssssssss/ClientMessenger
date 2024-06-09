@@ -6,6 +6,7 @@
 #include "nicknameform.h"
 #include "messengerform.h"
 #include "settingsform.h"
+#include "chatform.h"
 
 #include <QMainWindow>
 #include <QJsonObject>
@@ -21,6 +22,7 @@ private:
     NicknameForm *nicknameForm;
     MessengerForm *messengerForm;
     SettingsForm *settingsForm;
+    ChatForm *chatForm;
     unsigned int window_width = 500;
     unsigned int window_height = 500;
     QTcpSocket *socket;
@@ -37,6 +39,7 @@ private slots:
     void receiveNicknameStatus(); // Слот без параметров
     void showSettingsForm();
     void handleLogout();
+    void showChatForm(QString user);
 
 protected:
     void closeEvent(QCloseEvent *event) override;

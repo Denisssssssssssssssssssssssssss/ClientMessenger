@@ -26,6 +26,7 @@ private slots:
     void updateUserList(QJsonArray users);
     void onReadyRead(); // Новый слот для чтения данных из сокета
     void onSearchTextChanged(const QString &text);
+    void openChat(QListWidgetItem *item);
 
 private:
     QPushButton *settingsButton;
@@ -39,6 +40,7 @@ private:
 signals:
     void settingsRequested();
     void logoutRequested();
+    void chatRequested(QString user);
 };
 
 #endif // MESSENGERFORM_H

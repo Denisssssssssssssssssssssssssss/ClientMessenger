@@ -86,30 +86,27 @@ void MainWindow::showMessengerForm()
 {
     disconnect(socket, nullptr, this, nullptr);
     QWidget *currentCentralWidget = centralWidget();
-    if(currentCentralWidget == loginForm)
+    if (currentCentralWidget == loginForm)
     {
-        if (centralWidget()->layout())
-        {
-            centralWidget()->layout()->removeWidget(loginForm); //Удаляет виджет из лейаута
-        }
+        centralWidget()->layout()->removeWidget(loginForm);
         loginForm->setParent(nullptr);
     }
-    if(currentCentralWidget == nicknameForm)
+    else if (currentCentralWidget == nicknameForm)
     {
-        if (centralWidget()->layout())
-        {
-            centralWidget()->layout()->removeWidget(nicknameForm); //Удаляет виджет из лейаута
-        }
+        centralWidget()->layout()->removeWidget(nicknameForm);
         nicknameForm->setParent(nullptr);
     }
-    if(currentCentralWidget == settingsForm)
+    else if (currentCentralWidget == settingsForm)
     {
-        if (centralWidget()->layout())
-        {
-            centralWidget()->layout()->removeWidget(settingsForm); //Удаляет виджет из лейаута
-        }
+        centralWidget()->layout()->removeWidget(settingsForm);
         settingsForm->setParent(nullptr);
     }
+    else if (currentCentralWidget == chatForm)
+    {
+        centralWidget()->layout()->removeWidget(chatForm);
+        chatForm->setParent(nullptr);
+    }
+
     setCentralWidget(messengerForm);
     setWindowTitle(tr("Мессенджер"));
     messengerForm->connectSocket();
@@ -154,6 +151,7 @@ void MainWindow::onLoginSuccess() {
     connect(socket, &QTcpSocket::readyRead, this, &MainWindow::receiveNicknameStatus);
     connect(messengerForm, &MessengerForm::logoutRequested, this, &MainWindow::handleLogout);
     connect(settingsForm, &SettingsForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);
+    connect(messengerForm, &MessengerForm::chatRequested, this, &MainWindow::showChatForm);
     isNicknameNewUser();
 }
 
@@ -205,3 +203,16 @@ void MainWindow::handleLogout()
     showLoginForm();
 }
 
+void MainWindow::showChatForm(QString user)
+{
+    disconnect(socket, nullptr, this, nullptr);
+    centralWidget()->layout()->removeWidget(messengerForm);
+    messengerForm->setParent(nullptr);
+
+    chatForm = new ChatForm(socket, login, this); // Создаем новый объект ChatForm
+    connect(chatForm, &ChatForm::backRequested, this, &MainWindow::showMessengerForm); // Подключаем слот для возврата в MessengerForm
+
+    setCentralWidget(chatForm);
+    setWindowTitle(tr("Чат с ") + user);
+    chatForm->connectSocket(); // Предположим, что метод connectSocket() добавлен в ChatForm
+}

@@ -34,7 +34,9 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     connect(settingsButton, &QPushButton::clicked, this, &MessengerForm::openSettings);
     connect(logOutButton, &QPushButton::clicked, this, &MessengerForm::logOut);
     connect(searchEdit, &QLineEdit::textChanged, this, &MessengerForm::onSearchTextChanged);
+    connect(userList, &QListWidget::itemClicked, this, &MessengerForm::openChat); // Подключаем слот открытия чата
 }
+
 
 void MessengerForm::findUsers() {
     QString searchText = searchEdit->text().trimmed();
@@ -116,4 +118,10 @@ void MessengerForm::logOut()
         disconnect(socket, nullptr, this, nullptr);
         emit logoutRequested(); // Испускаем сигнал, что пользователь хочет выйти
     }
+}
+
+void MessengerForm::openChat(QListWidgetItem *item)
+{
+    QString user = item->text();
+    emit chatRequested(user); // Испускаем сигнал, который должен обрабатываться в MainWindow
 }
