@@ -29,6 +29,7 @@ private:
     QLineEdit *nameEdit;
 
     bool loginContainsOnlyAllowedCharacters(const QString &login);
+    bool passwordContainsRequiredCharacters(const QString &password);
 
 public:
     explicit SettingsForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
@@ -45,6 +46,7 @@ private slots:
     void enableLoginEdit();
     void onServerResponse();
     void handleBackClick();
+    void enablePasswordChange();
 };
 
 #endif // SETTINGSFORM_H
