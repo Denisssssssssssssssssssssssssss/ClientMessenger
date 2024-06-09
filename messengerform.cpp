@@ -34,6 +34,7 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     connect(logOutButton, &QPushButton::clicked, this, &MessengerForm::logOut);
     connect(searchEdit, &QLineEdit::textChanged, this, &MessengerForm::onSearchTextChanged);
     connect(userList, &QListWidget::itemClicked, this, &MessengerForm::openChat);
+    connect(chatList, &QListWidget::itemClicked, this, &MessengerForm::onChatListItemClicked);
 }
 
 void MessengerForm::findUsers()
@@ -75,9 +76,13 @@ void MessengerForm::onReadyRead()
     QByteArray responseData = socket->readAll();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
+
     if (jsonObj.contains("users") && jsonObj["users"].isArray()) {
         QJsonArray usersArray = jsonObj["users"].toArray();
         updateUserList(usersArray);
+    } else if (jsonObj.contains("chats") && jsonObj["chats"].isArray()) {
+        QJsonArray chatsArray = jsonObj["chats"].toArray();
+        updateChatList(chatsArray);
     }
 }
 
@@ -118,5 +123,40 @@ void MessengerForm::openChat(QListWidgetItem *item)
     QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
+    emit chatRequested(otherUserNickname);
+}
+
+void MessengerForm::updateChatList(QJsonArray chats)
+{
+    chatList->clear();
+    for (const QJsonValue &value : chats) {
+        QJsonObject chatObj = value.toObject();
+        QString chatName = chatObj["chat_name"].toString();
+        QString otherNickname = chatObj["other_nickname"].toString();
+        QListWidgetItem *chatItem = new QListWidgetItem(otherNickname);
+        chatItem->setData(Qt::UserRole, chatName); // Сохраняем chat_name в данных элемента, если потребуется
+        chatList->addItem(chatItem);
+    }
+}
+
+
+void MessengerForm::requestChatList()
+{
+    QJsonObject request{
+        {"type", "get_chat_list"},
+        {"login", login}
+    };
+    QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
+    socket->write(requestData);
+    socket->flush();
+}
+
+void MessengerForm::onChatListItemClicked(QListWidgetItem *item)
+{
+    QString chatName = item->data(Qt::UserRole).toString(); // Получаем chat_name
+
+    // В этом случае предполагаем, что chat_name содержит имя чата в формате "login1login2"
+    // Вы можете адаптировать этот код, если формат имени чата изменится
+    QString otherUserNickname = item->text(); // В данном случае текстом элемента будет nickname второго пользователя
     emit chatRequested(otherUserNickname);
 }

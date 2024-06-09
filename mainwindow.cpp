@@ -110,6 +110,7 @@ void MainWindow::showMessengerForm()
     setCentralWidget(messengerForm);
     setWindowTitle(tr("Мессенджер"));
     messengerForm->connectSocket();
+    messengerForm->requestChatList();
 }
 
 void MainWindow::showSettingsForm()

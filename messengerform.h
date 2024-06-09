@@ -18,15 +18,18 @@ class MessengerForm : public QWidget
 public:
     explicit MessengerForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
     void connectSocket();
+    void requestChatList();
 
 private slots:
     void openSettings();
     void logOut();
     void findUsers();
     void updateUserList(QJsonArray users);
-    void onReadyRead(); // Новый слот для чтения данных из сокета
+    void updateChatList(QJsonArray chats);
+    void onReadyRead(); //слот для чтения данных из сокета
     void onSearchTextChanged(const QString &text);
     void openChat(QListWidgetItem *item);
+    void onChatListItemClicked(QListWidgetItem *item); //слот для обработки щелчка по элементу chatList
 
 private:
     QPushButton *settingsButton;
