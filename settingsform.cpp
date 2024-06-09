@@ -9,6 +9,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
+#include <QInputDialog>
 
 SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) : socket(socket), login(login)
 {
@@ -98,23 +99,49 @@ void SettingsForm::enableNameEdit() {
 void SettingsForm::saveLogin() {
     QString newLogin = loginEdit->text();
 
-    // Проверяем, что новый логин не пуст
-    if(newLogin.isEmpty() || !loginContainsOnlyAllowedCharacters(login))
-    {
+    if(newLogin == login) {
+        saveLoginButton->hide();
+        changeLoginButton->show();
+        loginEdit->setReadOnly(true);
+        QMessageBox::information(this, tr("Информация"), tr("Логин не был изменён."));
+        return;
+    }
+
+    // Проверяем, что новый логин не пуст и содержит только допустимые символы
+    if(newLogin.isEmpty() || !loginContainsOnlyAllowedCharacters(newLogin)) {
         QMessageBox::warning(this, tr("Ошибка"), tr("Указан недопустимый логин."));
         return;
     }
 
-    // Отправляем запрос на сервер для обновления логина
-    QJsonObject request;
-    request["type"] = "update_login";
-    request["old_login"] = login; // Текущий логин пользователя
-    request["new_login"] = newLogin; // Новый логин
+    // Запрос пароля у пользователя
+    bool ok;
+    QString password = QInputDialog::getText(this, tr("Подтверждение логина"),
+                                             tr("Введите ваш пароль:"), QLineEdit::Password,
+                                             "", &ok);
 
-    QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
-    socket->write(requestData);
-    socket->flush();
+    // Если пользователь нажал OK и ввёл пароль
+    if(ok && !password.isEmpty()) {
+
+        // Создаём объект запроса
+        QJsonObject request;
+        request["type"] = "update_login";
+        request["old_login"] = login; // Текущий логин пользователя
+        request["new_login"] = newLogin; // Новый логин
+        request["password"] = password; // Хэш пароля
+
+        // Преобразуем запрос в JSON и отправляем его на сервер
+        QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
+        socket->write(requestData);
+        socket->flush();
+
+        // Пользовательский интерфейс обновляем после получения подтверждения от сервера
+    } else if (ok) {
+        // Если пользователь оставил поле пароля пустым и нажал OK
+        QMessageBox::warning(this, tr("Ошибка"), tr("Пароль не может быть пустым."));
+    }
+    // В противном случае пользователь нажал "Отмена", и ничего делать не нужно
 }
+
 
 void SettingsForm::saveName() {
     QString newName = nameEdit->text();
@@ -185,7 +212,8 @@ void SettingsForm::onServerResponse()
         }
         else if (status == "error" && jsonObj["type"].toString() == "check_nickname") {
             QString message = jsonObj.contains("message") ? jsonObj["message"].toString() : tr("Произошла ошибка.");
-            QMessageBox::warning(this, tr("Ошибка"), message);
+            QMessageBox::warning(this, tr("Ошибка"), "Данный логин уже используется.");
+
         }
     }
 }

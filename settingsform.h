@@ -29,7 +29,6 @@ private:
     QLineEdit *nameEdit;
 
     bool loginContainsOnlyAllowedCharacters(const QString &login);
-    //void requestNickname();
 
 public:
     explicit SettingsForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
