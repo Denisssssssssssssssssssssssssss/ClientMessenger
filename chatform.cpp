@@ -57,20 +57,25 @@ void ChatForm::sendMessage()
     QString messageText = messageEdit->text().trimmed();
     if (messageText.isEmpty()) return;
 
+    // Получение текущего времени в формате UTC
+    QDateTime currentTimeUTC = QDateTime::currentDateTimeUtc();
+    QString timestampUTC = currentTimeUTC.toString(Qt::ISODate);
+
     // Создаем JSON-объект для отправки сообщения на сервер
     QJsonObject messageJson;
     messageJson["type"] = "send_message";
     messageJson["chat_id"] = chatId;
     messageJson["user_id"] = login;
     messageJson["message_text"] = messageText;
+    messageJson["timestamp"] = timestampUTC; // Добавляем временную метку
 
     QByteArray requestData = QJsonDocument(messageJson).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
 
-    // Отображаем сообщение самостоятельно (пока нет подтверждения от сервера)
-    QDateTime currentTime = QDateTime::currentDateTime();
-    appendMessageToList(messageText, currentTime.toString("yyyy-MM-dd HH:mm:ss"), true);
+    // Отображаем сообщение самостоятельно
+    QString formattedTimestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm");
+    appendMessageToList(messageText, formattedTimestamp, true);
 
     messageEdit->clear();
 }
@@ -103,9 +108,14 @@ void ChatForm::onReadyRead()
         for (const QJsonValue &value : messagesArray) {
             QJsonObject messageObj = value.toObject();
             QString messageText = messageObj["message_text"].toString();
-            QString timestamp = messageObj["timestamp"].toString();
+            QString timestampUTC = messageObj["timestamp"].toString();
+
+            // Преобразование временной метки из UTC в локальное время клиента
+            QDateTime timestampLocal = QDateTime::fromString(timestampUTC, Qt::ISODate).toLocalTime();
+            QString formattedTimestamp = timestampLocal.toString("yyyy-MM-dd HH:mm");
+
             bool isOwnMessage = messageObj["user_id"].toString() == login;
-            appendMessageToList(messageText, timestamp, isOwnMessage);
+            appendMessageToList(messageText, formattedTimestamp, isOwnMessage);
         }
     }
 }
