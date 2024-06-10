@@ -164,9 +164,6 @@ void MessengerForm::requestChatList()
 void MessengerForm::onChatListItemClicked(QListWidgetItem *item)
 {
     QString chatName = item->data(Qt::UserRole).toString(); // Получаем chat_name
-
-    // В этом случае предполагаем, что chat_name содержит имя чата в формате "login1login2"
-    // Вы можете адаптировать этот код, если формат имени чата изменится
     QString otherUserNickname = item->text(); // В данном случае текстом элемента будет nickname второго пользователя
     disconnect(socket, nullptr, this, nullptr);
     emit chatRequested(chatName, otherUserNickname);
