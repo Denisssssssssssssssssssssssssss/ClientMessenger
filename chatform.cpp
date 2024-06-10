@@ -126,10 +126,8 @@ void ChatForm::appendMessageToList(const QString &message, const QString &timest
 
     if (isOwnMessage) {
         item->setTextAlignment(Qt::AlignRight);
-        item->setForeground(Qt::blue);
     } else {
         item->setTextAlignment(Qt::AlignLeft);
-        item->setForeground(Qt::magenta);
     }
 
     QString formattedMessage = message + "\n" + timestamp;
