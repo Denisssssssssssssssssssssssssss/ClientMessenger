@@ -232,6 +232,9 @@ void RegistrationForm::handleServerResponse()
 
     if (jsonObj.contains("status") && jsonObj["status"].toString() == "success") {
         QMessageBox::information(this, tr("Регистрация успешна"), tr("Регистрация прошла успешно!"));
+        loginEdit->clear();
+        passwordEdit->clear();
+        passwordEditAgain->clear();
         disconnect(socket, nullptr, this, nullptr);
         emit backRequested();  // Предположим, что этот сигнал заставит MainWindow показать LoginForm
     } else {

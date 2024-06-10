@@ -129,7 +129,7 @@ void MessengerForm::openChat(QListWidgetItem* item)
     QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
-
+    searchEdit->clear();
     // Подключаем временный слот для обработки ответа от сервера
     connect(this, &MessengerForm::chatIdReceived, this, [this, otherUserNickname](const QString& chatId) {
         emit chatRequested(chatId, otherUserNickname);
