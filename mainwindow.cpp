@@ -152,9 +152,28 @@ void MainWindow::onLoginSuccess() {
     connect(socket, &QTcpSocket::readyRead, this, &MainWindow::receiveNicknameStatus);
     connect(messengerForm, &MessengerForm::logoutRequested, this, &MainWindow::handleLogout);
     connect(settingsForm, &SettingsForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);
-    connect(messengerForm, &MessengerForm::chatRequested, this, &MainWindow::showChatForm);
+    connect(messengerForm, &MessengerForm::chatRequested, this, &MainWindow::onChatRequested);
     isNicknameNewUser();
 }
+
+void MainWindow::onChatRequested(QString chatId, QString userNickname) {
+    showChatForm(chatId, userNickname);
+}
+
+void MainWindow::showChatForm(QString chatId, QString userNickname)
+{
+    disconnect(socket, nullptr, this, nullptr);
+    centralWidget()->layout()->removeWidget(messengerForm);
+    messengerForm->setParent(nullptr);
+
+    chatForm = new ChatForm(socket, login, chatId, this); // Создаем новый объект ChatForm с chatId
+    connect(chatForm, &ChatForm::backRequested, this, &MainWindow::showMessengerForm); // Подключаем слот для возврата в MessengerForm
+
+    setCentralWidget(chatForm);
+    setWindowTitle(tr("Чат с ") + userNickname);
+    chatForm->connectSocket();
+}
+
 
 void MainWindow::isNicknameNewUser() {
     // Создание JSON запроса на получение статуса никнейма
@@ -204,7 +223,7 @@ void MainWindow::handleLogout()
     showLoginForm();
 }
 
-void MainWindow::showChatForm(QString user)
+/*void MainWindow::showChatForm(QString user)
 {
     disconnect(socket, nullptr, this, nullptr);
     centralWidget()->layout()->removeWidget(messengerForm);
@@ -216,4 +235,4 @@ void MainWindow::showChatForm(QString user)
     setCentralWidget(chatForm);
     setWindowTitle(tr("Чат с ") + user);
     chatForm->connectSocket(); // Предположим, что метод connectSocket() добавлен в ChatForm
-}
+}*/

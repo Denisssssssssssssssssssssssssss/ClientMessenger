@@ -1,6 +1,12 @@
 #include "ChatForm.h"
 
-ChatForm::ChatForm(QTcpSocket *socket, QString login, QWidget *parent) : QWidget(parent), socket(socket), login(login)
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QDateTime>
+#include <QListWidgetItem>
+#include <QJsonArray>
+
+ChatForm::ChatForm(QTcpSocket *socket, QString login, QString chatId, QWidget *parent) : QWidget(parent), socket(socket), login(login), chatId(chatId)
 {
     // Создание элементов интерфейса
     backButton = new QPushButton(tr("Назад"));
@@ -30,6 +36,9 @@ ChatForm::ChatForm(QTcpSocket *socket, QString login, QWidget *parent) : QWidget
     connect(backButton, &QPushButton::clicked, this, &ChatForm::goBack);
     connect(blacklistButton, &QPushButton::clicked, this, &ChatForm::addToBlacklist);
     connect(sendButton, &QPushButton::clicked, this, &ChatForm::sendMessage);
+
+    // Загрузка истории сообщений
+    loadChatHistory();
 }
 
 void ChatForm::goBack()
@@ -45,10 +54,75 @@ void ChatForm::addToBlacklist()
 
 void ChatForm::sendMessage()
 {
-    // Логика для отправки сообщения
+    QString messageText = messageEdit->text().trimmed();
+    if (messageText.isEmpty()) return;
+
+    // Создаем JSON-объект для отправки сообщения на сервер
+    QJsonObject messageJson;
+    messageJson["type"] = "send_message";
+    messageJson["chat_id"] = chatId;
+    messageJson["user_id"] = login;
+    messageJson["message_text"] = messageText;
+
+    QByteArray requestData = QJsonDocument(messageJson).toJson(QJsonDocument::Compact);
+    socket->write(requestData);
+    socket->flush();
+
+    // Отображаем сообщение самостоятельно (пока нет подтверждения от сервера)
+    QDateTime currentTime = QDateTime::currentDateTime();
+    appendMessageToList(messageText, currentTime.toString("yyyy-MM-dd HH:mm:ss"), true);
+
+    messageEdit->clear();
+}
+
+void ChatForm::loadChatHistory()
+{
+    // Запрос истории сообщений с сервера
+    QJsonObject request{
+        {"type", "get_chat_history"},
+        {"chat_id", chatId}
+    };
+    QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
+    socket->write(requestData);
+    socket->flush();
 }
 
 void ChatForm::connectSocket()
 {
-    //
+    connect(socket, &QTcpSocket::readyRead, this, &ChatForm::onReadyRead);
+}
+
+void ChatForm::onReadyRead()
+{
+    QByteArray responseData = socket->readAll();
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
+    QJsonObject jsonObj = jsonDoc.object();
+
+    if (jsonObj.contains("messages") && jsonObj["messages"].isArray()) {
+        QJsonArray messagesArray = jsonObj["messages"].toArray();
+        for (const QJsonValue &value : messagesArray) {
+            QJsonObject messageObj = value.toObject();
+            QString messageText = messageObj["message_text"].toString();
+            QString timestamp = messageObj["timestamp"].toString();
+            bool isOwnMessage = messageObj["user_id"].toString() == login;
+            appendMessageToList(messageText, timestamp, isOwnMessage);
+        }
+    }
+}
+
+void ChatForm::appendMessageToList(const QString &message, const QString &timestamp, bool isOwnMessage)
+{
+    QListWidgetItem *item = new QListWidgetItem;
+
+    if (isOwnMessage) {
+        item->setTextAlignment(Qt::AlignRight);
+        item->setForeground(Qt::blue);
+    } else {
+        item->setTextAlignment(Qt::AlignLeft);
+        item->setForeground(Qt::magenta);
+    }
+
+    QString formattedMessage = message + "\n" + timestamp;
+    item->setText(formattedMessage);
+    messageList->addItem(item);
 }

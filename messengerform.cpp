@@ -83,6 +83,9 @@ void MessengerForm::onReadyRead()
     } else if (jsonObj.contains("chats") && jsonObj["chats"].isArray()) {
         QJsonArray chatsArray = jsonObj["chats"].toArray();
         updateChatList(chatsArray);
+    } else if (jsonObj.contains("chat_id")) {
+        QString chatId = jsonObj["chat_id"].toString();
+        emit chatIdReceived(chatId); // Передаем chat_id через сигнал
     }
 }
 
@@ -111,19 +114,26 @@ void MessengerForm::logOut()
     }
 }
 
-void MessengerForm::openChat(QListWidgetItem *item)
+void MessengerForm::openChat(QListWidgetItem* item)
 {
     QString otherUserLogin = item->data(Qt::UserRole).toString(); // Получаем login другого пользователя
     QString otherUserNickname = item->data(Qt::UserRole + 1).toString(); // Получаем nickname другого пользователя
-    QJsonObject request = {
-        {"type", "create_chat"},
-        {"user1", login},
-        {"user2", otherUserLogin}
+
+    // Отправляем запрос на создание или получение чата
+    QJsonObject request{
+        {"type", "get_or_create_chat"},
+        {"login1", login},
+        {"login2", otherUserLogin}
     };
+
     QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
-    emit chatRequested(otherUserNickname);
+
+    // Подключаем временный слот для обработки ответа от сервера
+    connect(this, &MessengerForm::chatIdReceived, this, [this, otherUserNickname](const QString& chatId) {
+        emit chatRequested(chatId, otherUserNickname);
+    });
 }
 
 void MessengerForm::updateChatList(QJsonArray chats)
@@ -158,5 +168,5 @@ void MessengerForm::onChatListItemClicked(QListWidgetItem *item)
     // В этом случае предполагаем, что chat_name содержит имя чата в формате "login1login2"
     // Вы можете адаптировать этот код, если формат имени чата изменится
     QString otherUserNickname = item->text(); // В данном случае текстом элемента будет nickname второго пользователя
-    emit chatRequested(otherUserNickname);
+    emit chatRequested(chatName, otherUserNickname);
 }

@@ -39,7 +39,8 @@ private slots:
     void receiveNicknameStatus(); // Слот без параметров
     void showSettingsForm();
     void handleLogout();
-    void showChatForm(QString user);
+    void showChatForm(QString chatId, QString userNickname);
+    void onChatRequested(QString chatId, QString userNickname);
 
 protected:
     void closeEvent(QCloseEvent *event) override;

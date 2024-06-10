@@ -26,16 +26,16 @@ private slots:
     void findUsers();
     void updateUserList(QJsonArray users);
     void updateChatList(QJsonArray chats);
-    void onReadyRead(); //слот для чтения данных из сокета
+    void onReadyRead();
     void onSearchTextChanged(const QString &text);
     void openChat(QListWidgetItem *item);
-    void onChatListItemClicked(QListWidgetItem *item); //слот для обработки щелчка по элементу chatList
+    void onChatListItemClicked(QListWidgetItem *item);
 
 private:
     QPushButton *settingsButton;
     QLineEdit *searchEdit;
-    QListWidget *chatList; //Список существующих чатов
-    QListWidget *userList; //Список для найденных пользователей
+    QListWidget *chatList;
+    QListWidget *userList;
     QPushButton *logOutButton;
     QTcpSocket *socket;
     QString login;
@@ -43,7 +43,8 @@ private:
 signals:
     void settingsRequested();
     void logoutRequested();
-    void chatRequested(QString user);
+    void chatRequested(QString chatId, QString userNickname); // Объявление сигнала chatRequested
+    void chatIdReceived(QString chatId);
 };
 
 #endif // MESSENGERFORM_H
