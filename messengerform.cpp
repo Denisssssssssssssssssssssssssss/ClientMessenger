@@ -50,22 +50,6 @@ void MessengerForm::findUsers()
     socket->flush();
 }
 
-void MessengerForm::updateUserList(QJsonArray users)
-{
-    userList->clear();
-    for (const QJsonValue &value : users) {
-        QJsonObject userObj = value.toObject();
-        QString nickname = userObj["nickname"].toString();
-        QString login = userObj["login"].toString();
-        QListWidgetItem *userItem = new QListWidgetItem(nickname);
-        userItem->setData(Qt::UserRole, login);  // Сохраняем login пользователя
-        userItem->setData(Qt::UserRole + 1, nickname);  // Сохраняем nickname пользователя
-        userList->addItem(userItem);
-    }
-    chatList->hide();
-    userList->show();
-}
-
 void MessengerForm::connectSocket()
 {
     connect(socket, &QTcpSocket::readyRead, this, &MessengerForm::onReadyRead);
@@ -76,7 +60,7 @@ void MessengerForm::onReadyRead()
     QByteArray responseData = socket->readAll();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
-
+    qDebug() << "MessengerForm Response data: " << jsonObj;
     if (jsonObj.contains("users") && jsonObj["users"].isArray()) {
         QJsonArray usersArray = jsonObj["users"].toArray();
         updateUserList(usersArray);
@@ -85,6 +69,7 @@ void MessengerForm::onReadyRead()
         updateChatList(chatsArray);
     } else if (jsonObj.contains("chat_id")) {
         QString chatId = jsonObj["chat_id"].toString();
+        qDebug() << chatId;
         emit chatIdReceived(chatId); // Передаем chat_id через сигнал
     }
 }
@@ -133,27 +118,50 @@ void MessengerForm::openChat(QListWidgetItem* item)
 
     // Убедимся, что временные подключение сигнала правильно отключается до его переназначения
     disconnect(this, &MessengerForm::chatIdReceived, nullptr, nullptr);
-    connect(this, &MessengerForm::chatIdReceived, [this, otherUserNickname](const QString& chatId) {
+    connect(this, &MessengerForm::chatIdReceived, [this, otherUserLogin, otherUserNickname](const QString& chatId) {
         disconnect(this, &MessengerForm::chatIdReceived, nullptr, nullptr); // отключаем временное подключение
         qDebug() << "chatId received in openChat: " << chatId;
         emit chatRequested(chatId, otherUserNickname);
     });
 }
 
+void MessengerForm::updateUserList(QJsonArray users)
+{
+    userList->clear();
+    for (const QJsonValue &value : users) {
+        QJsonObject userObj = value.toObject();
+        QString nickname = userObj["nickname"].toString();
+        QString login = userObj["login"].toString();
+        QListWidgetItem *userItem = new QListWidgetItem(nickname);
+        userItem->setData(Qt::UserRole, login);  // Сохраняем login пользователя
+        userItem->setData(Qt::UserRole + 1, nickname);  // Сохраняем nickname пользователя
+        userItem->setData(Qt::UserRole + 2, login);  // Дублируем login пользователя в другом поле (для проверки корректности)
+        userList->addItem(userItem);
+    }
+    chatList->hide();
+    userList->show();
+}
 
 void MessengerForm::updateChatList(QJsonArray chats)
 {
     chatList->clear();
     for (const QJsonValue &value : chats) {
         QJsonObject chatObj = value.toObject();
-        QString chatName = chatObj["chat_name"].toString();
+        QString chatId = QString::number(chatObj["chat_id"].toInt()); // Получаем chat_id и преобразуем в строку
         QString otherNickname = chatObj["other_nickname"].toString();
         QListWidgetItem *chatItem = new QListWidgetItem(otherNickname);
-        chatItem->setData(Qt::UserRole, chatName); // Сохраняем chat_name в данных элемента, если потребуется
+        chatItem->setData(Qt::UserRole, chatId); // Сохраняем chat_id в данных элемента
         chatList->addItem(chatItem);
     }
 }
 
+void MessengerForm::onChatListItemClicked(QListWidgetItem *item)
+{
+    QString chatId = item->data(Qt::UserRole).toString(); // Получаем chat_id
+    QString otherUserNickname = item->text(); // В данном случае текстом элемента будет nickname второго пользователя
+    disconnect(socket, nullptr, this, nullptr);
+    emit chatRequested(chatId, otherUserNickname);
+}
 
 void MessengerForm::requestChatList()
 {
@@ -166,10 +174,3 @@ void MessengerForm::requestChatList()
     socket->flush();
 }
 
-void MessengerForm::onChatListItemClicked(QListWidgetItem *item)
-{
-    QString chatName = item->data(Qt::UserRole).toString(); // Получаем chat_name
-    QString otherUserNickname = item->text(); // В данном случае текстом элемента будет nickname второго пользователя
-    disconnect(socket, nullptr, this, nullptr);
-    emit chatRequested(chatName, otherUserNickname);
-}

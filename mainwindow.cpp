@@ -157,22 +157,26 @@ void MainWindow::onLoginSuccess() {
 }
 
 void MainWindow::onChatRequested(QString chatId, QString userNickname) {
+    qDebug() << "MainWindow received chatRequested signal with chatId:" << chatId << " and userNickname:" << userNickname;
     showChatForm(chatId, userNickname);
 }
 
 void MainWindow::showChatForm(QString chatId, QString userNickname)
 {
-    disconnect(socket, nullptr, this, nullptr);
-    centralWidget()->layout()->removeWidget(messengerForm);
-    messengerForm->setParent(nullptr);
+    disconnect(socket, nullptr, this, nullptr);  // Отключаем все предыдущие подключения к сокетам
+    if (centralWidget()->layout()) {
+        centralWidget()->layout()->removeWidget(messengerForm);
+        messengerForm->setParent(nullptr);
+    }
 
-    chatForm = new ChatForm(socket, login, chatId, this); // Создаем новый объект ChatForm с chatId
-    connect(chatForm, &ChatForm::backRequested, this, &MainWindow::showMessengerForm); // Подключаем слот для возврата в MessengerForm
+    chatForm = new ChatForm(socket, login, chatId, this);  // Создаем новый объект ChatForm с chatId
+    connect(chatForm, &ChatForm::backRequested, this, &MainWindow::showMessengerForm);  // Подключаем слот для возврата
 
     setCentralWidget(chatForm);
     setWindowTitle(tr("Чат с ") + userNickname);
     chatForm->connectSocket();
 }
+
 
 
 void MainWindow::isNicknameNewUser() {
@@ -200,7 +204,7 @@ void MainWindow::receiveNicknameStatus() {
         return; // Если данные не могут быть разобраны как JSON объект, выходим из метода
     }
     QJsonObject response = doc.object();
-    qDebug() << "MessengerForm Response data:" << response;
+    qDebug() << "MainWindow Response data:" << response;
     // Обработка ответа от сервера
     if (response.contains("nickname") && response["nickname"].toString() == "New user") {
         qDebug() << "New user\n";

@@ -102,7 +102,7 @@ void ChatForm::onReadyRead()
     QByteArray responseData = socket->readAll();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
-
+    qDebug() << "ChatForm response data: " << jsonObj;
     if (jsonObj.contains("messages") && jsonObj["messages"].isArray()) {
         QJsonArray messagesArray = jsonObj["messages"].toArray();
         for (const QJsonValue &value : messagesArray) {
