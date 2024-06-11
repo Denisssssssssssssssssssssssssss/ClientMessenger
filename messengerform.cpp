@@ -130,11 +130,16 @@ void MessengerForm::openChat(QListWidgetItem* item)
     socket->write(requestData);
     socket->flush();
     searchEdit->clear();
-    // Подключаем временный слот для обработки ответа от сервера
-    connect(this, &MessengerForm::chatIdReceived, this, [this, otherUserNickname](const QString& chatId) {
+
+    // Убедимся, что временные подключение сигнала правильно отключается до его переназначения
+    disconnect(this, &MessengerForm::chatIdReceived, nullptr, nullptr);
+    connect(this, &MessengerForm::chatIdReceived, [this, otherUserNickname](const QString& chatId) {
+        disconnect(this, &MessengerForm::chatIdReceived, nullptr, nullptr); // отключаем временное подключение
+        qDebug() << "chatId received in openChat: " << chatId;
         emit chatRequested(chatId, otherUserNickname);
     });
 }
+
 
 void MessengerForm::updateChatList(QJsonArray chats)
 {

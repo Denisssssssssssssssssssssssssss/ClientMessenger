@@ -223,16 +223,3 @@ void MainWindow::handleLogout()
     showLoginForm();
 }
 
-/*void MainWindow::showChatForm(QString user)
-{
-    disconnect(socket, nullptr, this, nullptr);
-    centralWidget()->layout()->removeWidget(messengerForm);
-    messengerForm->setParent(nullptr);
-
-    chatForm = new ChatForm(socket, login, this); // Создаем новый объект ChatForm
-    connect(chatForm, &ChatForm::backRequested, this, &MainWindow::showMessengerForm); // Подключаем слот для возврата в MessengerForm
-
-    setCentralWidget(chatForm);
-    setWindowTitle(tr("Чат с ") + user);
-    chatForm->connectSocket(); // Предположим, что метод connectSocket() добавлен в ChatForm
-}*/
