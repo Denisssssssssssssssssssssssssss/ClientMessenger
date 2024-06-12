@@ -105,22 +105,38 @@ void ChatForm::onReadyRead()
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
     qDebug() << "ChatForm response data: " << jsonObj;
-    if (jsonObj.contains("messages") && jsonObj["messages"].isArray()) {
-        QJsonArray messagesArray = jsonObj["messages"].toArray();
-        for (const QJsonValue &value : messagesArray) {
-            QJsonObject messageObj = value.toObject();
-            QString messageText = messageObj["message_text"].toString();
-            QString timestampUTC = messageObj["timestamp"].toString();
+
+    if (jsonObj.contains("type")) {
+        QString type = jsonObj["type"].toString();
+        if (type == "get_chat_history" && jsonObj.contains("messages") && jsonObj["messages"].isArray()) {
+            QJsonArray messagesArray = jsonObj["messages"].toArray();
+            for (const QJsonValue &value : messagesArray) {
+                QJsonObject messageObj = value.toObject();
+                QString messageText = messageObj["message_text"].toString();
+                QString timestampUTC = messageObj["timestamp"].toString();
+
+                // Преобразование временной метки из UTC в локальное время клиента
+                QDateTime timestampLocal = QDateTime::fromString(timestampUTC, Qt::ISODate).toLocalTime();
+                QString formattedTimestamp = timestampLocal.toString("yyyy-MM-dd HH:mm");
+
+                bool isOwnMessage = messageObj["user_id"].toString() == login;
+                appendMessageToList(messageText, formattedTimestamp, isOwnMessage);
+            }
+        } else if (type == "chat_update") {
+            // Обработка обновления чата
+            QString messageText = jsonObj["message_text"].toString();
+            QString timestampUTC = jsonObj["timestamp"].toString();
 
             // Преобразование временной метки из UTC в локальное время клиента
             QDateTime timestampLocal = QDateTime::fromString(timestampUTC, Qt::ISODate).toLocalTime();
             QString formattedTimestamp = timestampLocal.toString("yyyy-MM-dd HH:mm");
 
-            bool isOwnMessage = messageObj["user_id"].toString() == login;
+            bool isOwnMessage = jsonObj["user_id"].toString() == login;
             appendMessageToList(messageText, formattedTimestamp, isOwnMessage);
         }
     }
 }
+
 
 void ChatForm::appendMessageToList(const QString &message, const QString &timestamp, bool isOwnMessage)
 {
