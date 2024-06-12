@@ -16,7 +16,7 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent
     connect(loginForm, &LoginForm::registerRequested, this, &MainWindow::showRegistrationForm);
     connect(registrationForm, &RegistrationForm::backRequested, this, &MainWindow::showLoginForm);
 
-    // Если мы хотим иметь возможность возвращаться на виджет LoginForm после неудачной регистрации
+    //Если хотим иметь возможность возвращаться на виджет LoginForm после неудачной регистрации
     connect(registrationForm, &RegistrationForm::backRequested, this, &MainWindow::loginRequested);
 
     connect(loginForm, &LoginForm::loginSuccess, this, &MainWindow::onLoginSuccess);
@@ -46,7 +46,7 @@ void MainWindow::showLoginForm()
             messengerForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
         }
     }
-    setCentralWidget(loginForm); //Теперь устанавливаем loginForm как центральный виджет
+    setCentralWidget(loginForm);
     if(currentCentralWidget == messengerForm)
         loginForm->show();
     setWindowTitle(tr("Вход"));
@@ -62,11 +62,12 @@ void MainWindow::showRegistrationForm()
         centralWidget()->layout()->removeWidget(loginForm); //Удаляет виджет из лейаута
     }
     loginForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
-    setCentralWidget(registrationForm); //Теперь установаем registrationForm как центральный виджет
+    setCentralWidget(registrationForm);
     setWindowTitle(tr("Регистрация"));
     registrationForm->connectSocket();
 }
 
+//Слот для отображения формы ввода имени
 void MainWindow::showNicknameForm()
 {
     disconnect(socket, nullptr, this, nullptr);
@@ -82,6 +83,7 @@ void MainWindow::showNicknameForm()
     nicknameForm->connectSocket();
 }
 
+//Слов для отображения формы списка чатов
 void MainWindow::showMessengerForm()
 {
     disconnect(socket, nullptr, this, nullptr);
@@ -106,13 +108,13 @@ void MainWindow::showMessengerForm()
         centralWidget()->layout()->removeWidget(chatForm);
         chatForm->setParent(nullptr);
     }
-
     setCentralWidget(messengerForm);
     setWindowTitle(tr("Мессенджер"));
     messengerForm->connectSocket();
     messengerForm->requestChatList();
 }
 
+//Слот для отображения формы настроек
 void MainWindow::showSettingsForm()
 {
     disconnect(socket, nullptr, this, nullptr);
@@ -127,10 +129,11 @@ void MainWindow::showSettingsForm()
     settingsForm->requestNickname();
 }
 
+//Обработка закрытия окна
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     QMessageBox::StandardButton resBtn = QMessageBox::question(this, tr("Подтверждение"),
-                                                               tr("Вы уверены, что хотите закрыть мессенджер?"), QMessageBox::No | QMessageBox::Yes, QMessageBox::Yes);
+        tr("Вы уверены, что хотите закрыть мессенджер?"), QMessageBox::No | QMessageBox::Yes, QMessageBox::Yes);
     if (resBtn != QMessageBox::Yes)
     {
         event->ignore();
@@ -141,9 +144,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
-void MainWindow::onLoginSuccess() {
-    loginForm->hide(); // Скрыть LoginForm
-    login = loginForm->getLogin(); // Предположим, что у вас есть метод получения логина
+//В случае успешной авторизации
+void MainWindow::onLoginSuccess()
+{
+    loginForm->hide();
+    login = loginForm->getLogin();
     qDebug() << login << "\n";
     settingsForm = new SettingsForm(socket, login, this);
     messengerForm = new MessengerForm(socket, login, this);
@@ -156,74 +161,76 @@ void MainWindow::onLoginSuccess() {
     isNicknameNewUser();
 }
 
-void MainWindow::onChatRequested(QString chatId, QString userNickname) {
+//Был запрос на открытие чата
+void MainWindow::onChatRequested(QString chatId, QString userNickname)
+{
     qDebug() << "MainWindow received chatRequested signal with chatId:" << chatId << " and userNickname:" << userNickname;
     showChatForm(chatId, userNickname);
 }
 
+//Слот для отображения формы чата
 void MainWindow::showChatForm(QString chatId, QString userNickname)
 {
-    disconnect(socket, nullptr, this, nullptr);  // Отключаем все предыдущие подключения к сокетам
+    disconnect(socket, nullptr, this, nullptr);  //Отключаем все предыдущие подключения к сокетам
     if (centralWidget()->layout()) {
         centralWidget()->layout()->removeWidget(messengerForm);
         messengerForm->setParent(nullptr);
     }
 
-    chatForm = new ChatForm(socket, login, chatId, this);  // Создаем новый объект ChatForm с chatId
-    connect(chatForm, &ChatForm::backRequested, this, &MainWindow::showMessengerForm);  // Подключаем слот для возврата
+    chatForm = new ChatForm(socket, login, chatId, this);
+    connect(chatForm, &ChatForm::backRequested, this, &MainWindow::showMessengerForm);  //Подключаем слот для возврата
 
     setCentralWidget(chatForm);
     setWindowTitle(tr("Чат с ") + userNickname);
     chatForm->connectSocket();
 }
 
-
-
-void MainWindow::isNicknameNewUser() {
-    // Создание JSON запроса на получение статуса никнейма
+//Для проверки является ли имя пользователя "New user"
+void MainWindow::isNicknameNewUser()
+{
     QJsonObject request;
     request["type"] = "check_nickname";
     request["login"] = login;
 
-    // Отправка запроса на сервер
     QByteArray requestData = QJsonDocument(request).toJson();
     socket->write(requestData);
     socket->flush();
 }
 
-void MainWindow::receiveNicknameStatus() {
-    // Проверка, имеются ли доступные данные для чтения
-    if (socket->bytesAvailable() == 0) {
-        return; // Если данных нет, просто выходим из метода
+void MainWindow::receiveNicknameStatus()
+{
+    //Имеются ли доступные данные для чтения
+    if (socket->bytesAvailable() == 0)
+    {
+        return;
     }
 
     QByteArray rawData = socket->readAll();
     QJsonDocument doc = QJsonDocument::fromJson(rawData);
     qDebug() << QJsonDocument(doc).toJson(QJsonDocument::Compact);
-    if (!doc.isObject()) {
-        return; // Если данные не могут быть разобраны как JSON объект, выходим из метода
+    if (!doc.isObject())
+    {
+        return; //Если данные не могут быть разобраны как JSON объект, выходим из метода
     }
     QJsonObject response = doc.object();
     qDebug() << "MainWindow Response data:" << response;
-    // Обработка ответа от сервера
-    if (response.contains("nickname") && response["nickname"].toString() == "New user") {
+
+    if (response.contains("nickname") && response["nickname"].toString() == "New user")
+    {
         qDebug() << "New user\n";
         qDebug() << response["nickname"].toString();
-
-        //передать подключение
+        //Передать подключение
         disconnect(socket, nullptr, this, nullptr);
         showNicknameForm();
     } else {
         qDebug() << "Not new user\n";
         qDebug() << response["nickname"].toString();
-        //передать подключение
+        //Передать подключение
         disconnect(socket, nullptr, this, nullptr);
         showMessengerForm();
     }
 }
 
-void MainWindow::handleLogout()
-{
-    showLoginForm();
-}
+//Была нажата кнопка "Выйти"
+void MainWindow::handleLogout() { showLoginForm(); }
 

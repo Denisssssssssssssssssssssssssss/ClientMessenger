@@ -31,7 +31,7 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
     passwordEdit->setEchoMode(QLineEdit::Password);
     passwordEdit->setFixedWidth(200);
 
-    // Инициализация иконок глаза
+    //Инициализация иконок глаза
     openedEyeLabelPass = new QLabel(this);
     closedEyeLabelPass = new QLabel(this);
     QPixmap openedEyePixmap(":/images/icon-eye-opened.png");
@@ -40,7 +40,7 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
     openedEyeLabelPass->setPixmap(openedEyePixmap.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     openedEyeLabelPass->hide();
 
-    // Horizontal layout for password field and toggle visibility icons
+    //Горизонтальный лэйаут для поля ввода пароля и иконок
     QHBoxLayout *passwordLayout = new QHBoxLayout();
     passwordLayout->addStretch(5);
     passwordLayout->addWidget(passwordEdit);
@@ -60,7 +60,7 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
     centerLayout->addSpacing(10);
     centerLayout->addWidget(loginEdit, 0, Qt::AlignCenter);
     centerLayout->addSpacing(10);
-    centerLayout->addLayout(passwordLayout); // Используем passwordLayout здесь
+    centerLayout->addLayout(passwordLayout);
     centerLayout->addSpacing(10);
     centerLayout->addWidget(loginButton, 0, Qt::AlignCenter);
     centerLayout->addStretch(1);
@@ -75,6 +75,7 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
 
 }
 
+//Фильтр событий
 bool LoginForm::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::MouseButtonPress)
@@ -84,24 +85,25 @@ bool LoginForm::eventFilter(QObject *obj, QEvent *event)
             //Переключение видимости пароля для поля passwordEdit
             bool isPasswordVisible = passwordEdit->echoMode() == QLineEdit::Normal;
             passwordEdit->setEchoMode(isPasswordVisible ? QLineEdit::Password : QLineEdit::Normal);
-            closedEyeLabelPass->setVisible(isPasswordVisible); // Если пароль был видим, показываем закрытый глаз
-            openedEyeLabelPass->setVisible(!isPasswordVisible); // Если пароль был скрыт, показываем открытый глаз
-            return true; // Возвращаем true, чтобы указать, что событие обработано
+            closedEyeLabelPass->setVisible(isPasswordVisible); //Если пароль был видим, показываем закрытый глаз
+            openedEyeLabelPass->setVisible(!isPasswordVisible); //Если пароль был скрыт, показываем открытый глаз
+            return true; //Возвращаем true, чтобы указать, что событие обработано
         }
     }
-    return QWidget::eventFilter(obj, event); // Call base implementation for other cases
+    return QWidget::eventFilter(obj, event); //Вызов базового обработчика для других классов
 }
 
-
+//Нажатие на ссылку "Зарегистрироваться"
 void LoginForm::onRegisterClicked()
 {
-    // Используется для эмитирования сигнала при нажатии на ссылку регистрации
+    //Используется для эмитирования сигнала при нажатии на ссылку регистрации
     loginEdit->clear();
     passwordEdit->clear();
     disconnect(socket, nullptr, this, nullptr);
     emit registerRequested();
 }
 
+//Нажатие на кнопку "Войти"
 void LoginForm::attemptLogin()
 {
     QString login = loginEdit->text();
@@ -113,27 +115,22 @@ void LoginForm::attemptLogin()
         return;
     }
 
-    // Хеширование пароля с использованием логина как соли
+    //Хеширование пароля
     QByteArray byteArrayPasswordSalt = (password + login).toUtf8();
     QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha256).toHex();
 
-    // Создание JSON сообщения для входа
     QJsonObject loginRequest;
     loginRequest["type"] = "login";
     loginRequest["login"] = login;
     loginRequest["password"] = QString(hashedPassword);
 
-    // Преобразование JSON объекта в строку
     QByteArray dataArray = QJsonDocument(loginRequest).toJson(QJsonDocument::Compact);
 
-    // Отправка данных на сервер
     socket->write(dataArray);
     socket->flush();
-
-    // Тут вы можете добавить логику для приема и обработки ответа от сервера,
-    // например, с помощью соединения с сигналом readyRead сокета.
 }
 
+//Обработка ответа от сервера
 void LoginForm::handleServerResponse()
 {
     QByteArray responseData = socket->readAll();
@@ -141,29 +138,27 @@ void LoginForm::handleServerResponse()
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
 
-    if(jsonObj["status"].toString() == "success") {
-        // В случае успеха сообщаем об этом
-
+    if(jsonObj["status"].toString() == "success")
+    {
         login = loginEdit->text();
         qDebug() << login << "\n";
         disconnect(socket, nullptr, this, nullptr);
         loginEdit->clear();
         passwordEdit->clear();
         emit loginSuccess();
-    } else {
-        // В случае ошибки очистим поля ввода и покажем сообщение
+    }
+    else
+    {
         loginEdit->clear();
         passwordEdit->clear();
         QMessageBox::critical(this, tr("Ошибка входа"), tr("Введен неправильно логин или пароль. Попробуйте еще раз"));
     }
 }
 
-QString LoginForm::getLogin()
-{
-    return login;
-}
+QString LoginForm::getLogin() { return login; }
 
-void LoginForm::connectSocket() {
-    // Connect again when LoginForm is shown
+//Подключение к сокету для отправки сообщений на сервер и получения ответов
+void LoginForm::connectSocket()
+{
     connect(socket, &QTcpSocket::readyRead, this, &LoginForm::handleServerResponse);
 }

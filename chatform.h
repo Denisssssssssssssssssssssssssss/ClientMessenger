@@ -15,20 +15,6 @@ class ChatForm : public QWidget
 {
     Q_OBJECT
 
-public:
-    explicit ChatForm(QTcpSocket *socket, QString login, QString chatId, QWidget *parent = nullptr);
-    void connectSocket();
-    void loadChatHistory();
-
-private slots:
-    void goBack();
-    void addToBlacklist();
-    void sendMessage();
-    void onReadyRead();
-
-signals:
-    void backRequested();
-
 private:
     QString login;
     QString chatId;
@@ -39,7 +25,22 @@ private:
     QLineEdit *messageEdit;
     QPushButton *sendButton;
 
-    void appendMessageToList(const QString &message, const QString &timestamp, bool isOwnMessage); //метод для добавления сообщений в список
+    void appendMessageToList(const QString &message, const QString &timestamp, bool isOwnMessage); //Метод для добавления сообщений в список
+
+private slots:
+    void goBack();
+    void addToBlacklist();
+    void sendMessage();
+    void onReadyRead();
+
+public:
+    explicit ChatForm(QTcpSocket *socket, QString login, QString chatId, QWidget *parent = nullptr);
+    void connectSocket();
+    void loadChatHistory();
+
+signals:
+    void backRequested();
+
 };
 
 #endif // CHATFORM_H

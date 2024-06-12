@@ -29,7 +29,7 @@ public:
     void connectSocket();
 
 signals:
-    void nicknameUpdated(); // Сигнал об успешном обновлении никнейма
+    void nicknameUpdated(); //Сигнал об успешном обновлении никнейма
 
 };
 

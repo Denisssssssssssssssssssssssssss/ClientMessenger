@@ -98,27 +98,26 @@ RegistrationForm::RegistrationForm(QTcpSocket *socket, QWidget *parent) : socket
 
 }
 
+//Фильтр событий
 bool RegistrationForm::eventFilter(QObject *target, QEvent *event)
 {
     if (event->type() == QEvent::MouseButtonPress)
     {
         if (target == closedEyeLabelPass || target == opendEyeLabelPass)
         {
-            //Переключение видимости пароля для поля passwordEdit
             bool isPasswordVisible = passwordEdit->echoMode() == QLineEdit::Normal;
             passwordEdit->setEchoMode(isPasswordVisible ? QLineEdit::Password : QLineEdit::Normal);
-            closedEyeLabelPass->setVisible(isPasswordVisible); // Если пароль был видим, показываем закрытый глаз
-            opendEyeLabelPass->setVisible(!isPasswordVisible); // Если пароль был скрыт, показываем открытый глаз
-            return true; // Возвращаем true, чтобы указать, что событие обработано
+            closedEyeLabelPass->setVisible(isPasswordVisible); //Если пароль был видим, показываем закрытый глаз
+            opendEyeLabelPass->setVisible(!isPasswordVisible); //Если пароль был скрыт, показываем открытый глаз
+            return true; //Возвращаем true, чтобы указать, что событие обработано
         }
         else if (target == closedEyeLabelPassAgain || target == opendEyeLabelPassAgain)
         {
-            // Переключение видимости пароля для поля passwordEditAgain
             bool isPasswordVisibleAgain = passwordEditAgain->echoMode() == QLineEdit::Normal;
             passwordEditAgain->setEchoMode(isPasswordVisibleAgain ? QLineEdit::Password : QLineEdit::Normal);
-            closedEyeLabelPassAgain->setVisible(isPasswordVisibleAgain); // Если пароль был видим, показываем закрытый глаз
-            opendEyeLabelPassAgain->setVisible(!isPasswordVisibleAgain); // Если пароль был скрыт, показываем открытый глаз
-            return true; // Возвращаем true, чтобы указать, что событие обработано
+            closedEyeLabelPassAgain->setVisible(isPasswordVisibleAgain); //Если пароль был видим, показываем закрытый глаз
+            opendEyeLabelPassAgain->setVisible(!isPasswordVisibleAgain); //Если пароль был скрыт, показываем открытый глаз
+            return true; //Возвращаем true, чтобы указать, что событие обработано
         }
     }
     else if (event->type() == QEvent::MouseButtonRelease)
@@ -129,13 +128,14 @@ bool RegistrationForm::eventFilter(QObject *target, QEvent *event)
             if (mouseEvent->button() == Qt::LeftButton)
             {
                 onImageLabelClicked();
-                return true; // Возвращаем true, чтобы указать, что событие обработано
+                return true; //Возвращаем true, чтобы указать, что событие обработано
             }
         }
     }
-    return QWidget::eventFilter(target, event); // Для всех остальных случаев вызовите базовую реализацию
+    return QWidget::eventFilter(target, event); //Для всех остальных случаев вызывает базовую реализацию
 }
 
+//Обработка нажатия на картинку i
 void RegistrationForm::onImageLabelClicked()
 {
     QMessageBox::information(this, "Информация", "Логин может состоять из символов латиницы любого регистра, цифр, тире и нижнего подчеркивания.\n"
@@ -146,6 +146,7 @@ void RegistrationForm::onImageLabelClicked()
                                                  "не может быть более 255 символов.");
 }
 
+//Нажатие на кнопку "Назад"
 void RegistrationForm::backButtonClicked()
 {
     loginEdit->clear();
@@ -155,6 +156,7 @@ void RegistrationForm::backButtonClicked()
     emit backRequested();
 }
 
+//Нажатие на кнопку "Зарегистрироваться"
 void RegistrationForm::registerUser()
 {
     QString login = loginEdit->text();
@@ -166,7 +168,6 @@ void RegistrationForm::registerUser()
         QMessageBox::warning(this, "Ошибка", "Все поля должны быть заполнены.");
         return;
     }
-
     if(!loginContainsOnlyAllowedCharacters(login))
     {
         QMessageBox::warning(this, "Ошибка", "В логине использованы запрещенные символы.");
@@ -183,28 +184,22 @@ void RegistrationForm::registerUser()
         return;
     }
 
-    // Хеширование пароля с использованием логина как соли
+    //Хеширование пароля
     QByteArray byteArrayPasswordSalt = (password + login).toUtf8();
     QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha256).toHex();
 
-    // Создание JSON сообщения
     QJsonObject registrationRequest;
     registrationRequest["type"] = "register";
     registrationRequest["login"] = login;
     registrationRequest["password"] = QString(hashedPassword);
 
-    // Преобразование JSON объекта в строку
     QByteArray dataArray = QJsonDocument(registrationRequest).toJson(QJsonDocument::Compact);
 
-    // Отправка данных на сервер
-    //connect(socket, &QTcpSocket::readyRead, this, &RegistrationForm::handleServerResponse);
     socket->write(dataArray);
-    socket->flush(); // Ожидание отправки данных
-
-    // Тут вы можете реализовать прием ответа от сервера и соответствующую логику
+    socket->flush();
 }
 
-
+//Проверка пароля, содержит ли пароль только разрешенные символы и в нужном сочетании
 bool RegistrationForm::passwordContainsRequiredCharacters(const QString &password)
 {
     QRegularExpression upperCaseRegExp("[A-Z]"); //Регулярное выражение для заглавных букв
@@ -218,26 +213,31 @@ bool RegistrationForm::passwordContainsRequiredCharacters(const QString &passwor
            password.contains(specialRegExp);
 }
 
+//Проверка логина, содержит ли логин только разрешенные символы
 bool RegistrationForm::loginContainsOnlyAllowedCharacters(const QString &login)
 {
     QRegularExpression loginRegExp("^[A-Za-z\\d_-]+$"); //Регулярное выражение для допустимых символов в логине
     return login.contains(loginRegExp);
 }
 
+//Обработка ответов от сервера
 void RegistrationForm::handleServerResponse()
 {
     QByteArray responseData = socket->readAll();
     QJsonDocument jsonDoc(QJsonDocument::fromJson(responseData));
     QJsonObject jsonObj = jsonDoc.object();
 
-    if (jsonObj.contains("status") && jsonObj["status"].toString() == "success") {
+    if (jsonObj.contains("status") && jsonObj["status"].toString() == "success")
+    {
         QMessageBox::information(this, tr("Регистрация успешна"), tr("Регистрация прошла успешно!"));
         loginEdit->clear();
         passwordEdit->clear();
         passwordEditAgain->clear();
         disconnect(socket, nullptr, this, nullptr);
         emit backRequested();  // Предположим, что этот сигнал заставит MainWindow показать LoginForm
-    } else {
+    }
+    else
+    {
         QMessageBox::critical(this, tr("Ошибка регистрации"), tr("Данный логин уже используется. Придумайте другой."));
         loginEdit->clear();
         passwordEdit->clear();
@@ -245,7 +245,8 @@ void RegistrationForm::handleServerResponse()
     }
 }
 
-void RegistrationForm::connectSocket() {
-    // Connect again when RegistrationForm is shown
+//Подключение к сокету для отправки сообщений на сервер и получения ответов
+void RegistrationForm::connectSocket()
+{
     connect(socket, &QTcpSocket::readyRead, this, &RegistrationForm::handleServerResponse);
 }

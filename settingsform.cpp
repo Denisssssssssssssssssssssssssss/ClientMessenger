@@ -23,7 +23,7 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
     loginLabel = new QLabel(tr("Ваш логин:"), this);
     loginEdit = new QLineEdit(this);
     loginEdit->setText(login);
-    loginEdit->setReadOnly(true); // Поле для ввода, в котором нельзя писать
+    loginEdit->setReadOnly(true); //Поле для ввода, в котором нельзя писать
     loginEdit->setFixedWidth(200);
 
     changeLoginButton = new QPushButton(tr("Сменить логин"), this);
@@ -52,7 +52,7 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
     loginLayout->addWidget(loginLabel);
     loginLayout->addWidget(loginEdit);
     loginLayout->addWidget(changeLoginButton);
-    loginLayout->addWidget(saveLoginButton); // Добавляем кнопку сохранения рядом с кнопкой изменения
+    loginLayout->addWidget(saveLoginButton);
     loginLayout->addStretch();
 
     QHBoxLayout *nameLayout = new QHBoxLayout();
@@ -60,7 +60,7 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
     nameLayout->addWidget(nameLabel);
     nameLayout->addWidget(nameEdit);
     nameLayout->addWidget(changeNameButton);
-    nameLayout->addWidget(saveNameButton); // Аналогично для имени
+    nameLayout->addWidget(saveNameButton);
     nameLayout->addStretch();
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -81,24 +81,30 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
     connect(backButton, &QPushButton::clicked, this, &SettingsForm::handleBackClick);
     connect(changePasswordButton, &QPushButton::clicked, this, &SettingsForm::enablePasswordChange);
     nameEdit->setText(nickname);
-    nameEdit->setReadOnly(true); // Поле для ввода, в котором нельзя писать
+    nameEdit->setReadOnly(true); //Поле для ввода, в котором нельзя писать
 
     setLayout(mainLayout);
 }
 
-void SettingsForm::enableLoginEdit() {
-    loginEdit->setReadOnly(false); // Делаем поле ввода доступным
-    changeLoginButton->hide(); // Скрываем кнопку изменения
-    saveLoginButton->show(); // Показываем кнопку сохранения
+//Разрешить редактирование поля для ввода логина
+void SettingsForm::enableLoginEdit()
+{
+    loginEdit->setReadOnly(false);
+    changeLoginButton->hide();
+    saveLoginButton->show();
 }
 
-void SettingsForm::enableNameEdit() {
-    nameEdit->setReadOnly(false); // Делаем поле ввода доступным
-    changeNameButton->hide(); // Скрываем кнопку изменения
-    saveNameButton->show(); // Показываем кнопку сохранения
+//Разрешить редактирование поля для ввода имени (nickname)
+void SettingsForm::enableNameEdit()
+{
+    nameEdit->setReadOnly(false);
+    changeNameButton->hide();
+    saveNameButton->show();
 }
 
-void SettingsForm::saveLogin() {
+//Сохранение введенного логина
+void SettingsForm::saveLogin()
+{
     QString newLogin = loginEdit->text();
 
     if(newLogin == login) {
@@ -109,63 +115,59 @@ void SettingsForm::saveLogin() {
         return;
     }
 
-    // Проверяем, что новый логин не пуст и содержит только допустимые символы
+    //Проверяем, что новый логин не пуст и содержит только допустимые символы
     if(newLogin.isEmpty() || !loginContainsOnlyAllowedCharacters(newLogin)) {
         QMessageBox::warning(this, tr("Ошибка"), tr("Указан недопустимый логин."));
         return;
     }
 
-    // Запрос пароля у пользователя
+    //Запрос пароля у пользователя
     bool ok;
     QString password = QInputDialog::getText(this, tr("Подтверждение логина"),
-                                             tr("Введите ваш пароль:"), QLineEdit::Password,
-                                             "", &ok);
+        tr("Введите ваш пароль:"), QLineEdit::Password, "", &ok);
 
-    // Если пользователь нажал OK и ввёл пароль
-    if(ok && !password.isEmpty()) {
-
-        // Создаём объект запроса
+    //Если пользователь нажал OK и ввёл пароль
+    if(ok && !password.isEmpty())
+    {
         QJsonObject request;
         request["type"] = "update_login";
-        request["old_login"] = login; // Текущий логин пользователя
-        request["new_login"] = newLogin; // Новый логин
-        request["password"] = password; // Хэш пароля
+        request["old_login"] = login;
+        request["new_login"] = newLogin;
+        request["password"] = password;
 
-        // Преобразуем запрос в JSON и отправляем его на сервер
         QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
         socket->write(requestData);
         socket->flush();
-
-        // Пользовательский интерфейс обновляем после получения подтверждения от сервера
-    } else if (ok) {
-        // Если пользователь оставил поле пароля пустым и нажал OK
+    }
+    else if (ok)
+    {
         QMessageBox::warning(this, tr("Ошибка"), tr("Пароль не может быть пустым."));
     }
-    // В противном случае пользователь нажал "Отмена", и ничего делать не нужно
 }
 
-
-void SettingsForm::saveName() {
+//Сохранение введенного имени (nickname)
+void SettingsForm::saveName()
+{
     QString newName = nameEdit->text();
 
-    // Проверяем, что новое имя не пустое
-    if(newName.isEmpty() || newName == "New user") {
+    //Проверяем, что новое имя не пустое и не по умолчанию
+    if(newName.isEmpty() || newName == "New user")
+    {
         QMessageBox::warning(this, tr("Ошибка"), tr("Указано недопустимое имя."));
         return;
     }
 
-    // Отправляем запрос на сервер для обновления имени
     QJsonObject request;
     request["type"] = "update_nickname";
-    request["login"] = login; // Текущий логин пользователя, как идентификатор
-    request["nickname"] = newName; // Новый nickname
+    request["login"] = login;
+    request["nickname"] = newName;
 
     QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
 }
 
-
+//Слот обработки ответов сервера
 void SettingsForm::onServerResponse()
 {
     QByteArray responseData = socket->readAll();
@@ -176,7 +178,8 @@ void SettingsForm::onServerResponse()
     {
         QString status = jsonObj["status"].toString();
 
-        if (status == "success" && jsonObj["type"].toString() == "update_login") {
+        if (status == "success" && jsonObj["type"].toString() == "update_login")
+        {
             QMessageBox::information(this, tr("Успех"), tr("Логин успешно обновлён."));
             // Обновляем текущий логин
             login = loginEdit->text();
@@ -209,7 +212,7 @@ void SettingsForm::onServerResponse()
         {
             if (jsonObj.contains("nickname")) {
                 nickname = jsonObj["nickname"].toString();
-                nameEdit->setText(nickname);  // Устанавливаем полученный nickname
+                nameEdit->setText(nickname);
             }
         }
         else if (status == "error" && jsonObj["type"].toString() == "check_nickname") {
@@ -227,28 +230,32 @@ void SettingsForm::onServerResponse()
     }
 }
 
-void SettingsForm::connectSocket() {
+//Подключение к сокету для отправки сообщений на сервер и получения ответов
+void SettingsForm::connectSocket()
+{
     connect(socket, &QTcpSocket::readyRead, this, &SettingsForm::onServerResponse);
 }
 
+//Обработка нажатия кнопки "Назад"
 void SettingsForm::handleBackClick()
 {
-    // Отключаемся от сокета, чтобы не получать данные в этом виджете
     disconnect(socket, &QTcpSocket::readyRead, this, &SettingsForm::onServerResponse);
-
-    // Испускаем сигнал, который сообщит MainWindow, что нужно вернуться к MessengerForm
+    //Испускает сигнал, который сообщит MainWindow, что нужно вернуться к MessengerForm
     emit backToMessengerFormRequested();
 }
 
+//Проверка логина
 bool SettingsForm::loginContainsOnlyAllowedCharacters(const QString &login)
 {
     QRegularExpression loginRegExp("^[A-Za-z\\d_-]+$"); //Регулярное выражение для допустимых символов в логине
     return login.contains(loginRegExp);
 }
 
+//Запрос имени (nickname)
 void SettingsForm::requestNickname()
 {
-    if (!login.isEmpty()) {
+    if (!login.isEmpty())
+    {
         QJsonObject request;
         request["type"] = "check_nickname";
         request["login"] = login;
@@ -259,6 +266,7 @@ void SettingsForm::requestNickname()
     }
 }
 
+//Проверка пароля
 bool SettingsForm::passwordContainsRequiredCharacters(const QString &password)
 {
     QRegularExpression upperCaseRegExp("[A-Z]"); //Регулярное выражение для заглавных букв
@@ -272,14 +280,15 @@ bool SettingsForm::passwordContainsRequiredCharacters(const QString &password)
            password.contains(specialRegExp);
 }
 
+//Была нажата кнопка "Изменить пароль"
 void SettingsForm::enablePasswordChange()
 {
-    // Создаем диалоговое окно для ввода паролей
+    //Создаем диалоговое окно для ввода паролей
     QDialog passwordDialog(this);
     passwordDialog.setWindowTitle(tr("Сменить пароль"));
     passwordDialog.setFixedSize(300, 200);
 
-    // Поля ввода для текущего пароля, нового пароля и подтверждения нового пароля
+    //Поля ввода для текущего пароля, нового пароля и подтверждения нового пароля
     QLabel *currentPasswordLabel = new QLabel(tr("Введите пароль:"), &passwordDialog);
     QLineEdit *currentPasswordEdit = new QLineEdit(&passwordDialog);
     currentPasswordEdit->setEchoMode(QLineEdit::Password);
@@ -295,7 +304,7 @@ void SettingsForm::enablePasswordChange()
     confirmPasswordEdit->setEchoMode(QLineEdit::Password);
     confirmPasswordEdit->setFixedWidth(200);
 
-    // Добавляем кнопки ОК и Отмена
+    //Добавляем кнопки ОК и Отмена
     QPushButton *okButton = new QPushButton(tr("ОК"), &passwordDialog);
     QPushButton *cancelButton = new QPushButton(tr("Отмена"), &passwordDialog);
 
@@ -314,48 +323,49 @@ void SettingsForm::enablePasswordChange()
 
     passwordDialog.setLayout(dialogLayout);
 
-    // Подключаем кнопку ОК
+    //Подключаем кнопку ОК
     connect(okButton, &QPushButton::clicked, [&]() {
         QString currentPassword = currentPasswordEdit->text();
         QString newPassword = newPasswordEdit->text();
         QString confirmPassword = confirmPasswordEdit->text();
 
-        // Проверяем сложность нового пароля
-        if(newPassword.length() < 8 || !passwordContainsRequiredCharacters(newPassword)) {
+        //Проверяем сложность нового пароля
+        if(newPassword.length() < 8 || !passwordContainsRequiredCharacters(newPassword))
+        {
             QMessageBox::warning(&passwordDialog, tr("Ошибка"), tr("Новый пароль не соответствует требованиям по сложности."));
             return;
         }
 
-        // Проверяем совпадение новых паролей
-        if(newPassword != confirmPassword) {
+        //Проверяем совпадение новых паролей
+        if(newPassword != confirmPassword)
+        {
             QMessageBox::warning(&passwordDialog, tr("Ошибка"), tr("Новые пароли не совпадают."));
             return;
         }
 
-        // Отправляем запрос на сервер
         QJsonObject request;
         request["type"] = "update_password";
         request["login"] = login;
         QByteArray byteArrayPasswordSalt = (currentPassword + login).toUtf8();
         QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha256);
-        request["current_password"] = QString(hashedPassword.toHex()); // Преобразуем в строку
+        request["current_password"] = QString(hashedPassword.toHex());
         QByteArray byteArrayNewPasswordSalt = (newPassword + login).toUtf8();
         QByteArray hashedNewPassword = QCryptographicHash::hash(byteArrayNewPasswordSalt, QCryptographicHash::Sha256);
-        request["new_password"] = QString(hashedNewPassword.toHex()); // Преобразуем в строку
+        request["new_password"] = QString(hashedNewPassword.toHex());
 
         QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
         socket->write(requestData);
         socket->flush();
 
-        passwordDialog.accept(); // Закрываем диалоговое окно после отправки запроса
+        passwordDialog.accept(); //Закрываем диалоговое окно после отправки запроса
     });
 
-    // Подключаем кнопку Отмена
+    //Подключаем кнопку Отмена
     connect(cancelButton, &QPushButton::clicked, [&]() {
-        passwordDialog.reject(); // Закрываем диалоговое окно
+        passwordDialog.reject(); //Закрываем диалоговое окно
     });
 
-    passwordDialog.exec(); // Отображаем диалоговое окно
+    passwordDialog.exec(); //Отображаем диалоговое окно
 }
 
 

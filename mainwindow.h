@@ -36,7 +36,7 @@ private slots:
     void showMessengerForm();
     void showNicknameForm();
     void onLoginSuccess();
-    void receiveNicknameStatus(); // Слот без параметров
+    void receiveNicknameStatus();
     void showSettingsForm();
     void handleLogout();
     void showChatForm(QString chatId, QString userNickname);
@@ -49,8 +49,8 @@ public:
     MainWindow(QTcpSocket* socket, QWidget *parent = nullptr);
 
 signals:
-    void loginRequested();  // Сигнал для переключения на форму входа
-    void checkNicknameStatus(const QString& login);  // Сигнал для проверки статуса никнейма
+    void loginRequested();  //Сигнал для переключения на форму входа
+    void checkNicknameStatus(const QString& login);  //Сигнал для проверки статуса никнейма
 
 };
 #endif // MAINWINDOW_H

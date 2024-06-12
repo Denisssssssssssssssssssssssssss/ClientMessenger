@@ -31,14 +31,6 @@ private:
     bool loginContainsOnlyAllowedCharacters(const QString &login);
     bool passwordContainsRequiredCharacters(const QString &password);
 
-public:
-    explicit SettingsForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
-    void connectSocket();
-    void requestNickname();
-
-signals:
-    void backToMessengerFormRequested();
-
 private slots:
     void saveName();
     void saveLogin();
@@ -47,6 +39,15 @@ private slots:
     void onServerResponse();
     void handleBackClick();
     void enablePasswordChange();
+
+public:
+    explicit SettingsForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
+    void connectSocket();
+    void requestNickname();
+
+signals:
+    void backToMessengerFormRequested();
+
 };
 
 #endif // SETTINGSFORM_H

@@ -8,7 +8,7 @@
 
 ChatForm::ChatForm(QTcpSocket *socket, QString login, QString chatId, QWidget *parent) : QWidget(parent), socket(socket), login(login), chatId(chatId)
 {
-    // Создание элементов интерфейса
+    //Создание элементов интерфейса
     backButton = new QPushButton(tr("Назад"));
     blacklistButton = new QPushButton(tr("Добавить в ЧС"));
     messageList = new QListWidget();
@@ -16,89 +16,92 @@ ChatForm::ChatForm(QTcpSocket *socket, QString login, QString chatId, QWidget *p
     messageEdit->setPlaceholderText(tr("Сообщение..."));
     sendButton = new QPushButton(tr("Отправить"));
 
-    // Верхний слой с кнопками "Назад" и "Добавить в ЧС"
+    //Верхний слой с кнопками "Назад" и "Добавить в ЧС"
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(backButton, 0, Qt::AlignLeft);
     topLayout->addWidget(blacklistButton, 0, Qt::AlignRight);
 
-    // Нижний слой с полем ввода сообщения и кнопкой "Отправить"
+    //Нижний слой с полем ввода сообщения и кнопкой "Отправить"
     QHBoxLayout *bottomLayout = new QHBoxLayout();
     bottomLayout->addWidget(messageEdit);
     bottomLayout->addWidget(sendButton);
 
-    // Основной слой компоновки
+    //Основной слой компоновки
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->addLayout(topLayout); // Добавить верхний слой
-    mainLayout->addWidget(messageList); // Добавить виджет списка сообщений
-    mainLayout->addLayout(bottomLayout); // Добавить нижний слой
+    mainLayout->addLayout(topLayout);
+    mainLayout->addWidget(messageList);
+    mainLayout->addLayout(bottomLayout);
 
-    // Подключение нажатий кнопок к слотам
+    //Подключение нажатий кнопок к слотам
     connect(backButton, &QPushButton::clicked, this, &ChatForm::goBack);
     connect(blacklistButton, &QPushButton::clicked, this, &ChatForm::addToBlacklist);
     connect(sendButton, &QPushButton::clicked, this, &ChatForm::sendMessage);
 
-    // Загрузка истории сообщений
+    //Загрузка истории сообщений
     loadChatHistory();
 }
 
+//Нажатие на кнопку назад
 void ChatForm::goBack()
 {
     disconnect(socket, nullptr, this, nullptr);
     emit backRequested();
 }
 
+//Coming soon
 void ChatForm::addToBlacklist()
 {
-    // Логика для добавления в черный список
+
 }
 
+//Отправка сообщения
 void ChatForm::sendMessage()
 {
     QString messageText = messageEdit->text().trimmed();
     if (messageText.isEmpty()) return;
 
-    // Получение текущего времени в формате UTC
+    //Получение текущего времени в формате UTC
     QDateTime currentTimeUTC = QDateTime::currentDateTimeUtc();
     QString timestampUTC = currentTimeUTC.toString(Qt::ISODate);
 
-    // Создаем JSON-объект для отправки сообщения на сервер
     QJsonObject messageJson;
     messageJson["type"] = "send_message";
     messageJson["chat_id"] = chatId;
     messageJson["user_id"] = login;
     messageJson["message_text"] = messageText;
-    messageJson["timestamp"] = timestampUTC; // Добавляем временную метку
+    messageJson["timestamp"] = timestampUTC;
 
     QByteArray requestData = QJsonDocument(messageJson).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
 
-    // Отображаем сообщение самостоятельно
+    //Отображение отправленного сообщения
     QString formattedTimestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm");
     appendMessageToList(messageText, formattedTimestamp, true);
 
     messageEdit->clear();
 }
 
+//Загрузить историю переписки
 void ChatForm::loadChatHistory()
 {
-    // Запрос истории сообщений с сервера вместе с login
     QJsonObject request{
         {"type", "get_chat_history"},
         {"chat_id", chatId},
-        {"login", login}  // Добавляем login
+        {"login", login}
     };
     QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
 }
 
-
+//Подключение к сокету для отправки сообщений на сервер и получения ответов
 void ChatForm::connectSocket()
 {
     connect(socket, &QTcpSocket::readyRead, this, &ChatForm::onReadyRead);
 }
 
+//Обработка ответов от сервера
 void ChatForm::onReadyRead()
 {
     QByteArray responseData = socket->readAll();
@@ -106,28 +109,32 @@ void ChatForm::onReadyRead()
     QJsonObject jsonObj = jsonDoc.object();
     qDebug() << "ChatForm response data: " << jsonObj;
 
-    if (jsonObj.contains("type")) {
+    if (jsonObj.contains("type"))
+    {
         QString type = jsonObj["type"].toString();
-        if (type == "get_chat_history" && jsonObj.contains("messages") && jsonObj["messages"].isArray()) {
+        if (type == "get_chat_history" && jsonObj.contains("messages") && jsonObj["messages"].isArray())
+        {
             QJsonArray messagesArray = jsonObj["messages"].toArray();
-            for (const QJsonValue &value : messagesArray) {
+            for (const QJsonValue &value : messagesArray)
+            {
                 QJsonObject messageObj = value.toObject();
                 QString messageText = messageObj["message_text"].toString();
                 QString timestampUTC = messageObj["timestamp"].toString();
 
-                // Преобразование временной метки из UTC в локальное время клиента
+                //Преобразование временной метки из UTC в локальное время клиента
                 QDateTime timestampLocal = QDateTime::fromString(timestampUTC, Qt::ISODate).toLocalTime();
                 QString formattedTimestamp = timestampLocal.toString("yyyy-MM-dd HH:mm");
 
                 bool isOwnMessage = messageObj["user_id"].toString() == login;
                 appendMessageToList(messageText, formattedTimestamp, isOwnMessage);
             }
-        } else if (type == "chat_update") {
-            // Обработка обновления чата
+        }
+        else if (type == "chat_update")
+        {
             QString messageText = jsonObj["message_text"].toString();
             QString timestampUTC = jsonObj["timestamp"].toString();
 
-            // Преобразование временной метки из UTC в локальное время клиента
+            //Преобразование временной метки из UTC в локальное время клиента
             QDateTime timestampLocal = QDateTime::fromString(timestampUTC, Qt::ISODate).toLocalTime();
             QString formattedTimestamp = timestampLocal.toString("yyyy-MM-dd HH:mm");
 
@@ -137,7 +144,7 @@ void ChatForm::onReadyRead()
     }
 }
 
-
+//Добавление сообщения в виджет с сообщениями
 void ChatForm::appendMessageToList(const QString &message, const QString &timestamp, bool isOwnMessage)
 {
     QListWidgetItem *item = new QListWidgetItem;

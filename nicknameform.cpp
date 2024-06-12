@@ -8,7 +8,7 @@
 
 NicknameForm::NicknameForm(QTcpSocket *socket, QString login, QWidget *parent) : QWidget(parent), socket(socket), login(login)
 {
-    // Создание и настройка виджетов
+    //Создание и настройка виджетов
     instructionsLabel = new QLabel(tr("Введите ваше имя"));
     QFont labelFont = instructionsLabel->font();
     labelFont.setPointSize(14);
@@ -23,30 +23,33 @@ NicknameForm::NicknameForm(QTcpSocket *socket, QString login, QWidget *parent) :
     saveButton = new QPushButton(tr("Сохранить"));
     saveButton->setFixedWidth(200);
 
-    // Размещение виджетов в слое компоновки
+    //Размещение виджетов в слое компоновки
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->addWidget(instructionsLabel);
     layout->addWidget(nicknameEdit);
     layout->addWidget(saveButton);
     layout->setAlignment(Qt::AlignCenter);
 
-    // Подключение сигнала от кнопки к слоту saveNickname
+    //Подключение сигнала от кнопки к слоту saveNickname
     connect(saveButton, &QPushButton::clicked, this, &NicknameForm::saveNickname);
 }
 
-void NicknameForm::saveNickname() {
+//Сохранение имени
+void NicknameForm::saveNickname()
+{
     QString nickname = nicknameEdit->text().trimmed();
 
-    if (nickname.isEmpty()) {
+    if (nickname.isEmpty())
+    {
         return;
     }
 
-    if (nickname == "New user") {
+    if (nickname == "New user")
+    {
         QMessageBox::warning(this, tr("Ошибка"), tr("Введено недопустимое имя!"));
         return;
     }
 
-    // Формируем JSON для отправки на сервер
     QJsonObject request;
     request["type"] = "update_nickname";
     request["login"] = login;
@@ -57,7 +60,9 @@ void NicknameForm::saveNickname() {
     socket->flush();
 }
 
-void NicknameForm::handleServerResponse() {
+//Обработка ответа от сервера
+void NicknameForm::handleServerResponse()
+{
     QByteArray responseData = socket->readAll();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
@@ -74,6 +79,7 @@ void NicknameForm::handleServerResponse() {
     }
 }
 
+//Подключение к сокету для отправки сообщений на сервер и получения ответов
 void NicknameForm::connectSocket()
 {
     connect(socket, &QTcpSocket::readyRead, this, &NicknameForm::handleServerResponse);
