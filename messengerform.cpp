@@ -75,7 +75,12 @@ void MessengerForm::onReadyRead()
     } else if (jsonObj.contains("chats") && jsonObj["chats"].isArray()) {
         QJsonArray chatsArray = jsonObj["chats"].toArray();
         updateChatList(chatsArray);
-    } else if (jsonObj.contains("chat_id")) {
+    } else if(jsonObj.contains("type") && jsonObj["type"].toString() == "chat_update") {
+        // Обрабатываем обновление чата
+        qDebug() << "Some chat updated.";
+        requestChatList();
+    }
+    else if (jsonObj.contains("chat_id")) {
         QString chatId = jsonObj["chat_id"].toString();
         qDebug() << chatId;
         emit chatIdReceived(chatId); // Передаем chat_id через сигнал
@@ -157,7 +162,14 @@ void MessengerForm::updateChatList(QJsonArray chats)
         QJsonObject chatObj = value.toObject();
         QString chatId = QString::number(chatObj["chat_id"].toInt()); // Получаем chat_id и преобразуем в строку
         QString otherNickname = chatObj["other_nickname"].toString();
-        QListWidgetItem *chatItem = new QListWidgetItem(otherNickname);
+        int unreadCount = chatObj["unread_count"].toInt(); // Получаем количество непрочитанных сообщений
+
+        QString chatTitle = otherNickname;
+        if (unreadCount > 0) {
+            chatTitle += " (Новое сообщение)"; // Добавляем "Новое сообщение" при наличии непрочитанных сообщений
+        }
+
+        QListWidgetItem *chatItem = new QListWidgetItem(chatTitle);
         chatItem->setData(Qt::UserRole, chatId); // Сохраняем chat_id в данных элемента
         chatList->addItem(chatItem);
     }
