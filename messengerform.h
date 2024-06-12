@@ -10,6 +10,8 @@
 #include <QTcpSocket>
 #include <QString>
 #include <QJsonArray>
+#include <QMenu>
+#include <QAction>
 
 class MessengerForm : public QWidget
 {
@@ -30,6 +32,8 @@ private slots:
     void onSearchTextChanged(const QString &text);
     void openChat(QListWidgetItem *item);
     void onChatListItemClicked(QListWidgetItem *item);
+    void showContextMenu(const QPoint &pos); // Новый слот для контекстного меню
+    void deleteChat(); // Новый слот для удаления чата
 
 private:
     QPushButton *settingsButton;
@@ -39,6 +43,8 @@ private:
     QPushButton *logOutButton;
     QTcpSocket *socket;
     QString login;
+    QMenu *contextMenu; // Контекстное меню
+    QAction *deleteAction; // Действие удаления
 
 signals:
     void settingsRequested();

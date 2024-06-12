@@ -29,12 +29,20 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     userList->hide();
     mainLayout->addWidget(logOutButton); // Добавить кнопку "Выйти"
 
+    // Инициализация контекстного меню
+    contextMenu = new QMenu(this);
+    deleteAction = new QAction(tr("Удалить"), this);
+    contextMenu->addAction(deleteAction);
+
     // Подключение нажатий кнопок к слотам
     connect(settingsButton, &QPushButton::clicked, this, &MessengerForm::openSettings);
     connect(logOutButton, &QPushButton::clicked, this, &MessengerForm::logOut);
     connect(searchEdit, &QLineEdit::textChanged, this, &MessengerForm::onSearchTextChanged);
     connect(userList, &QListWidget::itemClicked, this, &MessengerForm::openChat);
     connect(chatList, &QListWidget::itemClicked, this, &MessengerForm::onChatListItemClicked);
+    connect(deleteAction, &QAction::triggered, this, &MessengerForm::deleteChat); // Подключение действия удаления
+    chatList->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(chatList, &QListWidget::customContextMenuRequested, this, &MessengerForm::showContextMenu); // Контекстное меню
 }
 
 void MessengerForm::findUsers()
@@ -172,5 +180,38 @@ void MessengerForm::requestChatList()
     QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
+}
+
+void MessengerForm::showContextMenu(const QPoint &pos)
+{
+    QListWidgetItem *item = chatList->itemAt(pos);
+    if (item) {
+        contextMenu->exec(chatList->viewport()->mapToGlobal(pos));
+    }
+}
+
+void MessengerForm::deleteChat()
+{
+    QListWidgetItem *item = chatList->currentItem();
+    if (item) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this, tr("Удалить чат"),
+            tr("Вы уверены, что хотите удалить чат? Все сообщения удалятся у вас и вашего собеседника. Переписку нельзя будет восстановить."),
+                QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            QString chatId = item->data(Qt::UserRole).toString();
+            // Отправьте запрос на сервер для удаления чата по chat_id
+            QJsonObject request{
+                {"type", "delete_chat"},
+                {"chat_id", chatId}
+            };
+            QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
+            socket->write(requestData);
+            socket->flush();
+
+            // Удалите элемент из chatList
+            delete item;
+        }
+    }
 }
 
