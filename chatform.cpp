@@ -82,15 +82,17 @@ void ChatForm::sendMessage()
 
 void ChatForm::loadChatHistory()
 {
-    // Запрос истории сообщений с сервера
+    // Запрос истории сообщений с сервера вместе с login
     QJsonObject request{
         {"type", "get_chat_history"},
-        {"chat_id", chatId}
+        {"chat_id", chatId},
+        {"login", login}  // Добавляем login
     };
     QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
     socket->write(requestData);
     socket->flush();
 }
+
 
 void ChatForm::connectSocket()
 {
