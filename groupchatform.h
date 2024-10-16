@@ -39,7 +39,7 @@ public:
     void loadChatHistory();
 
 signals:
-    void backRequested();
+    void backToMessengerFormRequested();
     void openSettingsRequested();
 };
 

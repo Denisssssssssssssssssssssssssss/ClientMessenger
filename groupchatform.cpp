@@ -45,7 +45,7 @@ GroupChatForm::GroupChatForm(QTcpSocket *socket, QString login, QString chatId, 
 void GroupChatForm::goBack()
 {
     disconnect(socket, nullptr, this, nullptr);
-    emit backRequested();
+    emit backToMessengerFormRequested();
 }
 
 //Нажатие на кнопку настройки

@@ -103,6 +103,11 @@ void MainWindow::showMessengerForm()
         centralWidget()->layout()->removeWidget(settingsForm);
         settingsForm->setParent(nullptr);
     }
+    else if (currentCentralWidget == groupchatForm)
+    {
+        centralWidget()->layout()->removeWidget(groupchatForm);
+        groupchatForm->setParent(nullptr);
+    }
     else if (currentCentralWidget == chatForm)
     {
         centralWidget()->layout()->removeWidget(chatForm);
@@ -221,7 +226,7 @@ void MainWindow::showGroupChatForm(QString chatId, QString userNickname)
     }
 
     groupchatForm = new GroupChatForm(socket, login, chatId, this);
-    connect(groupchatForm, &GroupChatForm::backRequested, this, &MainWindow::showMessengerForm);  //Подключаем слот для возврата
+    connect(groupchatForm, &GroupChatForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);  //Подключаем слот для возврата
 
     setCentralWidget(groupchatForm);
     setWindowTitle(tr("Чат с ") + userNickname);
@@ -277,7 +282,7 @@ void MainWindow::receiveNicknameStatus()
 //Слот для отображения формы авторизации
 void MainWindow::showSettingsGroupChatForm()
 {
-    settingsgroupchatForm = new SettingsGroupChatForm(socket, this);
+    settingsgroupchatForm = new SettingsGroupChatForm(socket, login, this);
     connect(settingsgroupchatForm, &SettingsGroupChatForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);
     QWidget *currentCentralWidget = centralWidget();
     if (centralWidget()->layout())

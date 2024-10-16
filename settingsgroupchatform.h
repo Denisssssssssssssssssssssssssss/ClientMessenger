@@ -23,14 +23,24 @@ private:
     QTcpSocket *socket;
     QString nickname;
     QPushButton *backButton;
+    QListWidget *participantsList;
+    QListWidget *availableUsersList;
+    QLineEdit *searchEdit;
+    QString login;
 
 private slots:
     void handleBackClick();
     void onServerResponse();
+    void onAddButtonClick();
+    void onRemoveButtonClick();
+    void findUsers();
+    void updateUserList(QJsonArray users);
+    void onReadyRead();
+    void onSearchTextChanged(const QString &text);
 
 public:
     void connectSocket();
-    explicit SettingsGroupChatForm(QTcpSocket *socket, QWidget *parent = nullptr);
+    explicit SettingsGroupChatForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
 
 signals:
     void backToMessengerFormRequested();
