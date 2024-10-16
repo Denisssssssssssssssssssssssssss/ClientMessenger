@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 
 class SettingsForm : public QWidget
 {

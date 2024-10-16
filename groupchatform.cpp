@@ -52,6 +52,7 @@ void GroupChatForm::goBack()
 void GroupChatForm::openSettings()
 {
     disconnect(socket, nullptr, this, nullptr);
+    emit sendChatId(chatId);
     emit openSettingsRequested();
 }
 

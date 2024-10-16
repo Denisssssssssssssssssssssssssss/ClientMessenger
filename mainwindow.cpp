@@ -227,10 +227,15 @@ void MainWindow::showGroupChatForm(QString chatId, QString userNickname)
 
     groupchatForm = new GroupChatForm(socket, login, chatId, this);
     connect(groupchatForm, &GroupChatForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);  //Подключаем слот для возврата
-
+    connect(groupchatForm, &GroupChatForm::sendChatId, this, &MainWindow::setChatId);
     setCentralWidget(groupchatForm);
     setWindowTitle(tr("Чат с ") + userNickname);
     groupchatForm->connectSocket();
+}
+
+void MainWindow::setChatId(QString chatId)
+{
+    this->chatId = chatId;
 }
 
 //Для проверки является ли имя пользователя "New user"
@@ -282,7 +287,7 @@ void MainWindow::receiveNicknameStatus()
 //Слот для отображения формы авторизации
 void MainWindow::showSettingsGroupChatForm()
 {
-    settingsgroupchatForm = new SettingsGroupChatForm(socket, login, this);
+    settingsgroupchatForm = new SettingsGroupChatForm(socket, login, chatId, this);
     connect(settingsgroupchatForm, &SettingsGroupChatForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);
     QWidget *currentCentralWidget = centralWidget();
     if (centralWidget()->layout())

@@ -27,20 +27,25 @@ private:
     QListWidget *availableUsersList;
     QLineEdit *searchEdit;
     QString login;
+    QString chatId;
+    QMenu *contextMenu;
+    QAction *addAction;
 
 private slots:
     void handleBackClick();
     void onServerResponse();
-    void onAddButtonClick();
     void onRemoveButtonClick();
     void findUsers();
     void updateUserList(QJsonArray users);
     void onReadyRead();
     void onSearchTextChanged(const QString &text);
+    void onAddButtonClick();
+    void showContextMenu(const QPoint &pos);
+
 
 public:
     void connectSocket();
-    explicit SettingsGroupChatForm(QTcpSocket *socket, QString login, QWidget *parent = nullptr);
+    explicit SettingsGroupChatForm(QTcpSocket *socket, QString login, QString chatId, QWidget *parent = nullptr);
 
 signals:
     void backToMessengerFormRequested();

@@ -41,6 +41,7 @@ public:
 signals:
     void backToMessengerFormRequested();
     void openSettingsRequested();
+    void sendChatId(QString chatId);
 };
 
 #endif // GROUPCHATFORM_H

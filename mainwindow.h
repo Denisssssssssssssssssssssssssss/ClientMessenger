@@ -30,8 +30,10 @@ private:
     unsigned int window_height = 500;
     QTcpSocket *socket;
     QString login;
+    QString chatId;
 
     void isNicknameNewUser();
+    void setChatId(QString chatId);
 
 private slots:
     void showLoginForm();

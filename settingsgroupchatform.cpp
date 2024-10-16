@@ -9,10 +9,10 @@ void SettingsGroupChatForm::connectSocket()
     connect(socket, &QTcpSocket::readyRead, this, &SettingsGroupChatForm::onServerResponse);
 }
 
-SettingsGroupChatForm::SettingsGroupChatForm(QTcpSocket *socket, QString login, QWidget *parent)
-    : QWidget(parent), socket(socket), login(login)
+SettingsGroupChatForm::SettingsGroupChatForm(QTcpSocket *socket, QString login, QString chatId, QWidget *parent)
+    : QWidget(parent), socket(socket), login(login), chatId(chatId)
 {
-    // Initialize UI components
+    // Инициализация UI компонентов
     backButton = new QPushButton("Назад", this);
     participantsList = new QListWidget(this);
     availableUsersList = new QListWidget(this);
@@ -20,49 +20,45 @@ SettingsGroupChatForm::SettingsGroupChatForm(QTcpSocket *socket, QString login, 
     searchEdit->setPlaceholderText(tr("Поиск..."));
     connect(searchEdit, &QLineEdit::textChanged, this, &SettingsGroupChatForm::onSearchTextChanged);
 
-    // Connect button signals to slots
+    // Подключение сигналов кнопок к слотам
     connect(backButton, &QPushButton::clicked, this, &SettingsGroupChatForm::handleBackClick);
 
-    // Set up layout
+    // Установка макета
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-
-    // Create a horizontal layout for the top section
     QHBoxLayout *topLayout = new QHBoxLayout();
 
-    // Add the back button to the top layout
     topLayout->addWidget(backButton);
-
-
-    // Add stretchable space to push other widgets down
     topLayout->addStretch();
 
-    // Add top layout to main layout
     mainLayout->addLayout(topLayout);
-
     mainLayout->addWidget(new QLabel(tr("Участники чата")));
-
-    // Add other widgets to the main layout
     mainLayout->addWidget(participantsList);
     mainLayout->addWidget(new QLabel(tr("Доступные пользователи")));
     mainLayout->addWidget(searchEdit);
     mainLayout->addWidget(availableUsersList);
 
-    // Create a horizontal layout for add/remove buttons
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-
-    // Add button layout to main layout
-    mainLayout->addLayout(buttonLayout);
-
     setLayout(mainLayout);
+
+    // Инициализация контекстного меню
+    contextMenu = new QMenu(this);
+    addAction = new QAction(tr("Добавить"), this);
+
+    contextMenu->addAction(addAction);
+
+    // Подключение сигналов для контекстного меню
+    connect(addAction, &QAction::triggered, this, &SettingsGroupChatForm::onAddButtonClick);
+
+    availableUsersList->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(availableUsersList, &QListWidget::customContextMenuRequested, this, &SettingsGroupChatForm::showContextMenu);
 }
 
-void SettingsGroupChatForm::onAddButtonClick()
+// Метод для показа контекстного меню
+void SettingsGroupChatForm::showContextMenu(const QPoint &pos)
 {
-    QListWidgetItem *selectedItem = availableUsersList->currentItem();
-    if (selectedItem) {
-        QString userName = selectedItem->text();
-        participantsList->addItem(userName); // Добавление пользователя в список участников
-        availableUsersList->takeItem(availableUsersList->row(selectedItem)); // Удаление пользователя из доступного списка
+    QListWidgetItem *item = availableUsersList->itemAt(pos);
+    if (item)
+    {
+        contextMenu->exec(availableUsersList->viewport()->mapToGlobal(pos));
     }
 }
 
@@ -145,3 +141,32 @@ void SettingsGroupChatForm::onSearchTextChanged(const QString &text)
         findUsers();
     }
 }
+
+void SettingsGroupChatForm::onAddButtonClick()
+{
+    QListWidgetItem *selectedItem = availableUsersList->currentItem();
+
+    if (selectedItem) {
+        QString userLogin = selectedItem->data(Qt::UserRole).toString(); // Получаем логин пользователя
+        QString userNickname = selectedItem->data(Qt::UserRole + 1).toString(); // Получаем никнейм пользователя
+
+        // Создаем JSON запрос для добавления пользователя в чат
+        QJsonObject request{
+            {"type", "add_user_to_chat"},
+            {"chatId", chatId},  // Добавляем chatId в запрос
+            {"login", userLogin},
+            {"nickname", userNickname}
+        };
+
+        QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
+        socket->write(requestData);  // Отправляем запрос на сервер
+        socket->flush();
+
+        qDebug() << "Запрос на добавление пользователя отправлен: " << userLogin;
+
+        participantsList->addItem(userNickname); // Добавление пользователя в список участников
+        availableUsersList->takeItem(availableUsersList->row(selectedItem)); // Удаление пользователя из доступного списка
+    }
+}
+
+
