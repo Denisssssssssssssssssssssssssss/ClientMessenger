@@ -7,7 +7,8 @@
 #include "messengerform.h"
 #include "settingsform.h"
 #include "chatform.h"
-
+#include "groupchatform.h"
+#include "settingsgroupchatform.h"
 #include <QMainWindow>
 #include <QJsonObject>
 #include <QString>
@@ -23,6 +24,8 @@ private:
     MessengerForm *messengerForm;
     SettingsForm *settingsForm;
     ChatForm *chatForm;
+    GroupChatForm *groupchatForm;
+    SettingsGroupChatForm *settingsgroupchatForm;
     unsigned int window_width = 500;
     unsigned int window_height = 500;
     QTcpSocket *socket;
@@ -35,12 +38,14 @@ private slots:
     void showRegistrationForm();
     void showMessengerForm();
     void showNicknameForm();
+    void showSettingsGroupChatForm();
     void onLoginSuccess();
     void receiveNicknameStatus();
     void showSettingsForm();
     void handleLogout();
-    void showChatForm(QString chatId, QString userNickname);
-    void onChatRequested(QString chatId, QString userNickname);
+    void showChatForm(QString chatId, QString userNickname, QString chatType);
+    void showGroupChatForm(QString chatId, QString userNickname);
+    void onChatRequested(QString chatId, QString userNickname, QString chatType);
 
 protected:
     void closeEvent(QCloseEvent *event) override;

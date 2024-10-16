@@ -347,10 +347,10 @@ void SettingsForm::enablePasswordChange()
         request["type"] = "update_password";
         request["login"] = login;
         QByteArray byteArrayPasswordSalt = (currentPassword + login).toUtf8();
-        QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha256);
+        QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha512);
         request["current_password"] = QString(hashedPassword.toHex());
         QByteArray byteArrayNewPasswordSalt = (newPassword + login).toUtf8();
-        QByteArray hashedNewPassword = QCryptographicHash::hash(byteArrayNewPasswordSalt, QCryptographicHash::Sha256);
+        QByteArray hashedNewPassword = QCryptographicHash::hash(byteArrayNewPasswordSalt, QCryptographicHash::Sha512);
         request["new_password"] = QString(hashedNewPassword.toHex());
 
         QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);

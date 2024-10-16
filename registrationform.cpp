@@ -135,7 +135,7 @@ bool RegistrationForm::eventFilter(QObject *target, QEvent *event)
     return QWidget::eventFilter(target, event); //Для всех остальных случаев вызывает базовую реализацию
 }
 
-//Обработка нажатия на картинку i
+//Обработка нажатия на картинку
 void RegistrationForm::onImageLabelClicked()
 {
     QMessageBox::information(this, "Информация", "Логин может состоять из символов латиницы любого регистра, цифр, тире и нижнего подчеркивания.\n"
@@ -186,7 +186,7 @@ void RegistrationForm::registerUser()
 
     //Хеширование пароля
     QByteArray byteArrayPasswordSalt = (password + login).toUtf8();
-    QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha256).toHex();
+    QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha512).toHex();
 
     QJsonObject registrationRequest;
     registrationRequest["type"] = "register";

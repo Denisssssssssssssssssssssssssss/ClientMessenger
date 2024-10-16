@@ -117,7 +117,7 @@ void LoginForm::attemptLogin()
 
     //Хеширование пароля
     QByteArray byteArrayPasswordSalt = (password + login).toUtf8();
-    QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha256).toHex();
+    QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha512).toHex();
 
     QJsonObject loginRequest;
     loginRequest["type"] = "login";

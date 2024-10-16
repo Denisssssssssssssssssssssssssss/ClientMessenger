@@ -10,6 +10,7 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
 {
     //Создание элементов интерфейса
     settingsButton = new QPushButton(tr("Настройки"));
+    createGroupChatButton = new QPushButton("Создать групповой чат", this);
     searchEdit = new QLineEdit();
     searchEdit->setPlaceholderText(tr("Поиск..."));
     chatList = new QListWidget();
@@ -19,6 +20,7 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     //Верхний слой с кнопками и полем поиска
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(settingsButton);
+    topLayout->addWidget(createGroupChatButton);
     topLayout->addWidget(searchEdit);
 
     //Основной слой компоновки
@@ -36,6 +38,7 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
 
     //Подключение нажатий кнопок к слотам
     connect(settingsButton, &QPushButton::clicked, this, &MessengerForm::openSettings);
+    connect(createGroupChatButton, &QPushButton::clicked, this, &MessengerForm::createGroupChat);
     connect(logOutButton, &QPushButton::clicked, this, &MessengerForm::logOut);
     connect(searchEdit, &QLineEdit::textChanged, this, &MessengerForm::onSearchTextChanged);
     connect(userList, &QListWidget::itemClicked, this, &MessengerForm::openChat);
@@ -72,26 +75,22 @@ void MessengerForm::onReadyRead()
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
     qDebug() << "MessengerForm Response data: " << jsonObj;
-    if (jsonObj.contains("users") && jsonObj["users"].isArray())
-    {
+
+    // Handle different types of responses
+    if (jsonObj.contains("users") && jsonObj["users"].isArray()) {
         QJsonArray usersArray = jsonObj["users"].toArray();
         updateUserList(usersArray);
-    }
-    else if (jsonObj.contains("chats") && jsonObj["chats"].isArray())
-    {
+    } else if (jsonObj.contains("chats") && jsonObj["chats"].isArray()) {
         QJsonArray chatsArray = jsonObj["chats"].toArray();
         updateChatList(chatsArray);
-    }
-    else if(jsonObj.contains("type") && jsonObj["type"].toString() == "chat_update")
-    {
-        qDebug() << "Some chat updated.";
-        requestChatList();
-    }
-    else if (jsonObj.contains("chat_id"))
-    {
-        QString chatId = jsonObj["chat_id"].toString();
-        qDebug() << chatId;
-        emit chatIdReceived(chatId); //Передаем chat_id через сигнал
+    } else if (jsonObj.contains("type")) {
+        QString type = jsonObj["type"].toString();
+        if (type == "chat_update") {
+            qDebug() << "Some chat updated.";
+            requestChatList();
+        } else if (type == "check_chat_exists") {
+            handleChatCreationResponse(jsonObj);
+        }
     }
 }
 
@@ -126,29 +125,36 @@ void MessengerForm::logOut()
     }
 }
 
-//Нажатие на элемент chatList или userList
+// Нажатие на элемент chatList или userList
 void MessengerForm::openChat(QListWidgetItem* item)
 {
     QString otherUserLogin = item->data(Qt::UserRole).toString(); // Получаем login другого пользователя
     QString otherUserNickname = item->data(Qt::UserRole + 1).toString(); // Получаем nickname другого пользователя
+    QString chatType = item->data(Qt::UserRole + 2).toString(); // Получаем тип чата
 
-    QJsonObject request {
-        {"type", "get_or_create_chat"},
-        {"login1", login},
-        {"login2", otherUserLogin}
-    };
+    if (chatType == "personal") {
+        // Для персонального чата отправляем запрос на создание или получение чата
+        QJsonObject request {
+            {"type", "get_or_create_chat"},
+            {"login1", login},
+            {"login2", otherUserLogin}
+        };
 
-    QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
-    socket->write(requestData);
-    socket->flush();
-    searchEdit->clear();
+        QByteArray requestData = QJsonDocument(request).toJson(QJsonDocument::Compact);
+        socket->write(requestData);
+        socket->flush();
+        searchEdit->clear();
 
-    disconnect(this, &MessengerForm::chatIdReceived, nullptr, nullptr);
-    connect(this, &MessengerForm::chatIdReceived, [this, otherUserLogin, otherUserNickname](const QString& chatId) {
-        disconnect(this, &MessengerForm::chatIdReceived, nullptr, nullptr); //Отключаем временное подключение
-        qDebug() << "chatId received in openChat: " << chatId;
-        emit chatRequested(chatId, otherUserNickname);
-    });
+        disconnect(this, &MessengerForm::chatIdReceived, nullptr, nullptr);
+        connect(this, &MessengerForm::chatIdReceived, [this, otherUserLogin, otherUserNickname](const QString& chatId) {
+            disconnect(this, &MessengerForm::chatIdReceived, nullptr, nullptr); // Отключаем временное подключение
+            qDebug() << "chatId received in openChat: " << chatId;
+            emit chatRequested(chatId, otherUserNickname, "personal"); // Передаем тип чата
+        });
+    } else if (chatType == "group") {
+        // Для группового чата просто запрашиваем его ID и открываем GroupChatForm
+        emit chatRequested(item->data(Qt::UserRole).toString(), otherUserNickname, chatType); // Передаем chatId и тип чата
+    }
 }
 
 //Обновить список пользователей при поиске
@@ -170,7 +176,7 @@ void MessengerForm::updateUserList(QJsonArray users)
     userList->show();
 }
 
-//Обновить список чатов
+// Обновить список чатов
 void MessengerForm::updateChatList(QJsonArray chats)
 {
     chatList->clear();
@@ -180,6 +186,7 @@ void MessengerForm::updateChatList(QJsonArray chats)
         QString chatId = QString::number(chatObj["chat_id"].toInt());
         QString otherNickname = chatObj["other_nickname"].toString();
         int unreadCount = chatObj["unread_count"].toInt();
+        QString chatType = chatObj["chat_type"].toString(); // Получаем тип чата
 
         QString chatTitle = otherNickname;
         if (unreadCount > 0)
@@ -189,6 +196,7 @@ void MessengerForm::updateChatList(QJsonArray chats)
 
         QListWidgetItem *chatItem = new QListWidgetItem(chatTitle);
         chatItem->setData(Qt::UserRole, chatId);
+        chatItem->setData(Qt::UserRole + 1, chatType); // Сохраняем тип чата
         chatList->addItem(chatItem);
     }
 }
@@ -197,9 +205,11 @@ void MessengerForm::updateChatList(QJsonArray chats)
 void MessengerForm::onChatListItemClicked(QListWidgetItem *item)
 {
     QString chatId = item->data(Qt::UserRole).toString();
-    QString otherUserNickname = item->text(); //В данном случае текстом элемента будет nickname второго пользователя
+    QString otherUserNickname = item->text(); // В данном случае текстом элемента будет nickname второго пользователя
+    QString chatType = item->data(Qt::UserRole + 1).toString(); // Получаем тип чата
+
     disconnect(socket, nullptr, this, nullptr);
-    emit chatRequested(chatId, otherUserNickname);
+    emit chatRequested(chatId, otherUserNickname, chatType); // Передаем chatType вместе с другими параметрами
 }
 
 //Запрос на получение списка чатов
@@ -248,3 +258,57 @@ void MessengerForm::deleteChat()
         }
     }
 }
+
+void MessengerForm::createGroupChat() {
+    QDialog dialog(this);
+    dialog.setWindowTitle("Введите название чата");
+
+    QVBoxLayout dialogLayout;
+    QLineEdit *chatNameEdit = new QLineEdit(&dialog);
+    QPushButton *okButton = new QPushButton("ОК", &dialog);
+
+    dialogLayout.addWidget(new QLabel("Название чата:"));
+    dialogLayout.addWidget(chatNameEdit);
+    dialogLayout.addWidget(okButton);
+    dialog.setLayout(&dialogLayout);
+
+    connect(okButton, &QPushButton::clicked, [&]() {
+        QString chatName = chatNameEdit->text();
+        if (!chatName.isEmpty()) {
+            // Send request to check if chat exists
+            QJsonObject checkRequest {
+                {"type", "check_chat_exists"},
+                {"chat_name", chatName},
+                {"login", login}
+            };
+
+            QByteArray requestData = QJsonDocument(checkRequest).toJson(QJsonDocument::Compact);
+            socket->write(requestData);
+            socket->flush();
+
+            // No need to handle UI changes here; handled in onReadyRead
+            dialog.close(); // Close dialog after sending request
+        }
+    });
+
+    dialog.exec(); // Open dialog for input
+}
+
+void MessengerForm::handleChatCreationResponse(const QJsonObject &jsonObj)
+{
+    QString status = jsonObj["status"].toString();
+
+    if (status == "success") {
+        // Chat successfully created
+        //QString chatId = jsonObj["chat_id"].toString();
+        //qDebug() << "New group chat created with ID:" << chatId;
+        //emit groupChatCreated(chatId); // Notify about the new chat
+    } else if (status == "error") {
+        // Error while creating chat
+        QString message = jsonObj["message"].toString();
+        QMessageBox::warning(this, "Ошибка", "Не удалось создать чат. Пожалуйста, попробуйте снова.");
+    }
+}
+
+
+

@@ -162,27 +162,70 @@ void MainWindow::onLoginSuccess()
 }
 
 //Был запрос на открытие чата
-void MainWindow::onChatRequested(QString chatId, QString userNickname)
+void MainWindow::onChatRequested(QString chatId, QString userNickname, QString chatType)
 {
     qDebug() << "MainWindow received chatRequested signal with chatId:" << chatId << " and userNickname:" << userNickname;
-    showChatForm(chatId, userNickname);
+    showChatForm(chatId, userNickname, chatType);
 }
 
-//Слот для отображения формы чата
-void MainWindow::showChatForm(QString chatId, QString userNickname)
+// Слот для отображения формы чата
+void MainWindow::showChatForm(QString chatId, QString userNickname, QString chatType)
 {
-    disconnect(socket, nullptr, this, nullptr);  //Отключаем все предыдущие подключения к сокетам
+    disconnect(socket, nullptr, this, nullptr);  // Отключаем все предыдущие подключения к сокетам
     if (centralWidget()->layout()) {
         centralWidget()->layout()->removeWidget(messengerForm);
         messengerForm->setParent(nullptr);
     }
 
-    chatForm = new ChatForm(socket, login, chatId, this);
-    connect(chatForm, &ChatForm::backRequested, this, &MainWindow::showMessengerForm);  //Подключаем слот для возврата
+    if (chatType == "personal") {
+        // Если тип чата персональный, создаем ChatForm
+        chatForm = new ChatForm(socket, login, chatId, this);
+        connect(chatForm, &ChatForm::backRequested, this, &MainWindow::showMessengerForm);  // Подключаем слот для возврата
+        setCentralWidget(chatForm);
+        setWindowTitle(tr("Чат с ") + userNickname);
+    } else if (chatType == "group") {
+        // Если тип чата групповой, создаем GroupChatForm
+        groupchatForm = new GroupChatForm(socket, login, chatId, this);
+        connect(groupchatForm, &GroupChatForm::openSettingsRequested, this, &MainWindow::showSettingsGroupChatForm);
+        setCentralWidget(groupchatForm);
+        setWindowTitle(tr("Групповой чат: ") + userNickname);
+    }
 
-    setCentralWidget(chatForm);
+    // Устанавливаем соединение с сокетом для нового чата
+    if (chatType == "personal") {
+        chatForm->connectSocket();
+    } else if (chatType == "group") {
+        groupchatForm->connectSocket();
+    }
+}
+//Слот для отображения формы чата
+void MainWindow::showGroupChatForm(QString chatId, QString userNickname)
+{
+    disconnect(socket, nullptr, this, nullptr);  //Отключаем все предыдущие подключения к сокетам
+    QWidget *currentCentralWidget = centralWidget();
+    if(currentCentralWidget == settingsgroupchatForm)
+    {
+        if (centralWidget()->layout())
+        {
+            centralWidget()->layout()->removeWidget(settingsgroupchatForm); //Удаляет виджет из лейаута
+            settingsgroupchatForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+        }
+    }
+    if(currentCentralWidget == messengerForm)
+    {
+        if (centralWidget()->layout())
+        {
+            centralWidget()->layout()->removeWidget(messengerForm); //Удаляет виджет из лейаута
+            messengerForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+        }
+    }
+
+    groupchatForm = new GroupChatForm(socket, login, chatId, this);
+    connect(groupchatForm, &GroupChatForm::backRequested, this, &MainWindow::showMessengerForm);  //Подключаем слот для возврата
+
+    setCentralWidget(groupchatForm);
     setWindowTitle(tr("Чат с ") + userNickname);
-    chatForm->connectSocket();
+    groupchatForm->connectSocket();
 }
 
 //Для проверки является ли имя пользователя "New user"
@@ -229,6 +272,24 @@ void MainWindow::receiveNicknameStatus()
         disconnect(socket, nullptr, this, nullptr);
         showMessengerForm();
     }
+}
+
+//Слот для отображения формы авторизации
+void MainWindow::showSettingsGroupChatForm()
+{
+    settingsgroupchatForm = new SettingsGroupChatForm(socket, this);
+    //connect(settingsgroupchatForm, &SettingsGroupChatForm::backToGroupChatRequested, this, &MainWindow::showGroupChatForm);
+    QWidget *currentCentralWidget = centralWidget();
+    if (centralWidget()->layout())
+    {
+        centralWidget()->layout()->removeWidget(groupchatForm); //Удаляет виджет из лейаута
+        groupchatForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+    }
+    setCentralWidget(settingsgroupchatForm);
+    if(currentCentralWidget == groupchatForm)
+        settingsgroupchatForm->show();
+    setWindowTitle(tr("Настройки группового чата"));
+    settingsgroupchatForm->connectSocket();
 }
 
 //Была нажата кнопка "Выйти"

@@ -11,22 +11,26 @@ CONFIG += c++17
 
 SOURCES += \
     chatform.cpp \
+    groupchatform.cpp \
     loginform.cpp \
     main.cpp \
     mainwindow.cpp \
     messengerform.cpp \
     nicknameform.cpp \
     registrationform.cpp \
-    settingsform.cpp
+    settingsform.cpp \
+    settingsgroupchatform.cpp
 
 HEADERS += \
     chatform.h \
+    groupchatform.h \
     loginform.h \
     mainwindow.h \
     messengerform.h \
     nicknameform.h \
     registrationform.h \
-    settingsform.h
+    settingsform.h \
+    settingsgroupchatform.h
 
 FORMS +=
 
