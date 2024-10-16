@@ -278,7 +278,7 @@ void MainWindow::receiveNicknameStatus()
 void MainWindow::showSettingsGroupChatForm()
 {
     settingsgroupchatForm = new SettingsGroupChatForm(socket, this);
-    //connect(settingsgroupchatForm, &SettingsGroupChatForm::backToGroupChatRequested, this, &MainWindow::showGroupChatForm);
+    connect(settingsgroupchatForm, &SettingsGroupChatForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);
     QWidget *currentCentralWidget = centralWidget();
     if (centralWidget()->layout())
     {
