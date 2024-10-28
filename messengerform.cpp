@@ -1,3 +1,8 @@
+/**
+ * /file MessengerForm.cpp
+ * /brief Реализация класса формы мессенджера.
+ */
+
 #include "MessengerForm.h"
 #include <QJsonDocument>
 #include <QMessageBox>
@@ -6,9 +11,15 @@
 #include <QJsonObject>
 #include <QListWidgetItem>
 
+/**
+ * /brief Конструктор MessengerForm.
+ * /param socket Указатель на QTcpSocket для работы с сетевыми соединениями.
+ * /param login Логин пользователя.
+ * /param parent Указатель на родительский виджет.
+ */
 MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent) : QWidget(parent), socket(socket), login(login)
 {
-    //Создание элементов интерфейса
+    // Создание элементов интерфейса
     settingsButton = new QPushButton(tr("Настройки"));
     createGroupChatButton = new QPushButton("Создать групповой чат", this);
     searchEdit = new QLineEdit();
@@ -17,13 +28,13 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     userList = new QListWidget();
     logOutButton = new QPushButton(tr("Выйти"));
 
-    //Верхний слой с кнопками и полем поиска
+    // Верхний слой с кнопками и полем поиска
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(settingsButton);
     topLayout->addWidget(createGroupChatButton);
     topLayout->addWidget(searchEdit);
 
-    //Основной слой компоновки
+    // Основной слой компоновки
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addLayout(topLayout);
     mainLayout->addWidget(chatList);
@@ -31,12 +42,12 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     userList->hide();
     mainLayout->addWidget(logOutButton);
 
-    //Инициализация контекстного меню
+    // Инициализация контекстного меню
     contextMenu = new QMenu(this);
     deleteAction = new QAction(tr("Удалить"), this);
     contextMenu->addAction(deleteAction);
 
-    //Подключение нажатий кнопок к слотам
+    // Подключение нажатий кнопок к слотам
     connect(settingsButton, &QPushButton::clicked, this, &MessengerForm::openSettings);
     connect(createGroupChatButton, &QPushButton::clicked, this, &MessengerForm::createGroupChat);
     connect(logOutButton, &QPushButton::clicked, this, &MessengerForm::logOut);
@@ -48,7 +59,9 @@ MessengerForm::MessengerForm(QTcpSocket *socket, QString login, QWidget *parent)
     connect(chatList, &QListWidget::customContextMenuRequested, this, &MessengerForm::showContextMenu);
 }
 
-//Метод для отправки запроса на поиск пользователя
+/**
+ * /brief Метод для отправки запроса на поиск пользователя.
+ */
 void MessengerForm::findUsers()
 {
     QString searchText = searchEdit->text().trimmed();
@@ -62,13 +75,17 @@ void MessengerForm::findUsers()
     socket->flush();
 }
 
-//Подключение к сокету для отправки сообщений на сервер и получения ответов
+/**
+ * /brief Подключается к сокету для отправки сообщений на сервер и получения ответов.
+ */
 void MessengerForm::connectSocket()
 {
     connect(socket, &QTcpSocket::readyRead, this, &MessengerForm::onReadyRead);
 }
 
-//Обработка ответов от сервера
+/**
+ * /brief Обработка ответов от сервера.
+ */
 void MessengerForm::onReadyRead()
 {
     QByteArray responseData = socket->readAll();
@@ -76,7 +93,7 @@ void MessengerForm::onReadyRead()
     QJsonObject jsonObj = jsonDoc.object();
     qDebug() << "MessengerForm Response data: " << jsonObj;
 
-    // Handle different types of responses
+    // Обработка различных типов ответов
     if (jsonObj.contains("users") && jsonObj["users"].isArray()) {
         QJsonArray usersArray = jsonObj["users"].toArray();
         updateUserList(usersArray);
@@ -86,7 +103,7 @@ void MessengerForm::onReadyRead()
     } else if (jsonObj.contains("type")) {
         QString type = jsonObj["type"].toString();
         if (type == "chat_update") {
-            qDebug() << "Some chat updated.";
+            qDebug() << "Некоторые чаты обновлены.";
             requestChatList();
         } else if (type == "check_chat_exists") {
             handleChatCreationResponse(jsonObj);
@@ -94,14 +111,19 @@ void MessengerForm::onReadyRead()
     }
 }
 
-//Нажатие на кнопку "Настройки"
+/**
+ * /brief Слот, вызываемый при нажатии на кнопку "Настройки".
+ */
 void MessengerForm::openSettings()
 {
     disconnect(socket, nullptr, this, nullptr);
     emit settingsRequested();
 }
 
-//Если текст в строке поиска изменился
+/**
+ * /brief Слот, вызываемый при изменении текста в строке поиска.
+ * /param text Новый текст.
+ */
 void MessengerForm::onSearchTextChanged(const QString &text)
 {
     if (text.isEmpty())
@@ -115,7 +137,9 @@ void MessengerForm::onSearchTextChanged(const QString &text)
     }
 }
 
-//Кнопка "Выйти"
+/**
+ * /brief Слот, вызываемый при нажатии на кнопку "Выйти".
+ */
 void MessengerForm::logOut()
 {
     QMessageBox::StandardButton reply = QMessageBox::question(this, tr("Выход"), tr("Вы уверены, что хотите выйти?"), QMessageBox::Yes | QMessageBox::No);
@@ -125,7 +149,10 @@ void MessengerForm::logOut()
     }
 }
 
-// Нажатие на элемент chatList или userList
+/**
+ * /brief Слот, вызываемый при открытии чата.
+ * /param item Элемент списка, представляющий чат.
+ */
 void MessengerForm::openChat(QListWidgetItem* item)
 {
     QString otherUserLogin = item->data(Qt::UserRole).toString(); // Получаем login другого пользователя
@@ -157,7 +184,10 @@ void MessengerForm::openChat(QListWidgetItem* item)
     }
 }
 
-//Обновить список пользователей при поиске
+/**
+ * /brief Обновляет список пользователей при поиске.
+ * /param users Массив JSON с пользователями.
+ */
 void MessengerForm::updateUserList(QJsonArray users)
 {
     userList->clear();
@@ -169,14 +199,17 @@ void MessengerForm::updateUserList(QJsonArray users)
         QListWidgetItem *userItem = new QListWidgetItem(nickname);
         userItem->setData(Qt::UserRole, login);  // Сохраняем login пользователя
         userItem->setData(Qt::UserRole + 1, nickname);  // Сохраняем nickname пользователя
-        userItem->setData(Qt::UserRole + 2, login);  // Дублируем login пользователя в другом поле (для проверки корректности)
+        userItem->setData(Qt::UserRole + 2, login);  // Дублируем login пользователя в другом поле
         userList->addItem(userItem);
     }
     chatList->hide();
     userList->show();
 }
 
-// Обновить список чатов
+/**
+ * /brief Обновляет список чатов.
+ * /param chats Массив JSON с чатами.
+ */
 void MessengerForm::updateChatList(QJsonArray chats)
 {
     chatList->clear();
@@ -201,7 +234,10 @@ void MessengerForm::updateChatList(QJsonArray chats)
     }
 }
 
-//Нажатие на элемент списка чатов
+/**
+ * /brief Слот, вызываемый при нажатии на элемент списка чатов.
+ * /param item Элемент списка, представляющий чат.
+ */
 void MessengerForm::onChatListItemClicked(QListWidgetItem *item)
 {
     QString chatId = item->data(Qt::UserRole).toString();
@@ -212,7 +248,9 @@ void MessengerForm::onChatListItemClicked(QListWidgetItem *item)
     emit chatRequested(chatId, otherUserNickname, chatType); // Передаем chatType вместе с другими параметрами
 }
 
-//Запрос на получение списка чатов
+/**
+ * /brief Запрашивает получение списка чатов.
+ */
 void MessengerForm::requestChatList()
 {
     QJsonObject request {
@@ -224,7 +262,10 @@ void MessengerForm::requestChatList()
     socket->flush();
 }
 
-//Показать контекстное меню
+/**
+ * /brief Показывает контекстное меню.
+ * /param pos Позиция для отображения меню.
+ */
 void MessengerForm::showContextMenu(const QPoint &pos)
 {
     QListWidgetItem *item = chatList->itemAt(pos);
@@ -234,7 +275,9 @@ void MessengerForm::showContextMenu(const QPoint &pos)
     }
 }
 
-//Удаление чата
+/**
+ * /brief Удаляет чат.
+ */
 void MessengerForm::deleteChat()
 {
     QListWidgetItem *item = chatList->currentItem();
@@ -242,8 +285,8 @@ void MessengerForm::deleteChat()
     {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this, tr("Удалить чат"),
-            tr("Вы уверены, что хотите удалить чат? Все сообщения удалятся у вас и вашего собеседника. Переписку нельзя будет восстановить."),
-                QMessageBox::Yes | QMessageBox::No);
+                                      tr("Вы уверены, что хотите удалить чат? Все сообщения удалятся у вас и вашего собеседника. Переписку нельзя будет восстановить."),
+                                      QMessageBox::Yes | QMessageBox::No);
         if (reply == QMessageBox::Yes)
         {
             QString chatId = item->data(Qt::UserRole).toString();
@@ -259,6 +302,9 @@ void MessengerForm::deleteChat()
     }
 }
 
+/**
+ * /brief Создает групповой чат.
+ */
 void MessengerForm::createGroupChat() {
     QDialog dialog(this);
     dialog.setWindowTitle("Введите название чата");
@@ -275,7 +321,7 @@ void MessengerForm::createGroupChat() {
     connect(okButton, &QPushButton::clicked, [&]() {
         QString chatName = chatNameEdit->text();
         if (!chatName.isEmpty()) {
-            // Send request to check if chat exists
+            // Отправка запроса для проверки существования чата
             QJsonObject checkRequest {
                 {"type", "check_chat_exists"},
                 {"chat_name", chatName},
@@ -286,29 +332,27 @@ void MessengerForm::createGroupChat() {
             socket->write(requestData);
             socket->flush();
 
-            // No need to handle UI changes here; handled in onReadyRead
-            dialog.close(); // Close dialog after sending request
+            // Закрыть диалог после отправки запроса
+            dialog.close();
         }
     });
 
-    dialog.exec(); // Open dialog for input
+    dialog.exec(); // Открытие диалога для ввода
 }
 
+/**
+ * /brief Обработка ответа на запрос создания чата.
+ * /param jsonObj Объект JSON с ответом на запрос.
+ */
 void MessengerForm::handleChatCreationResponse(const QJsonObject &jsonObj)
 {
     QString status = jsonObj["status"].toString();
 
     if (status == "success") {
-        // Chat successfully created
-        //QString chatId = jsonObj["chat_id"].toString();
-        //qDebug() << "New group chat created with ID:" << chatId;
-        //emit groupChatCreated(chatId); // Notify about the new chat
+        // Чат успешно создан
     } else if (status == "error") {
-        // Error while creating chat
+        // Ошибка при создании чата
         QString message = jsonObj["message"].toString();
         QMessageBox::warning(this, "Ошибка", "Не удалось создать чат. Пожалуйста, попробуйте снова.");
     }
 }
-
-
-

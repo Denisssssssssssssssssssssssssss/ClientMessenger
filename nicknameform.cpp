@@ -1,3 +1,8 @@
+/**
+ * /file NicknameForm.cpp
+ * /brief Реализация класса формы для обновления имени пользователя.
+ */
+
 #include "NicknameForm.h"
 
 #include <QVBoxLayout>
@@ -6,9 +11,15 @@
 #include <QJsonDocument>
 #include <QByteArray>
 
+/**
+ * /brief Конструктор NicknameForm.
+ * /param socket Указатель на QTcpSocket для работы с сетевыми соединениями.
+ * /param login Логин пользователя.
+ * /param parent Указатель на родительский виджет.
+ */
 NicknameForm::NicknameForm(QTcpSocket *socket, QString login, QWidget *parent) : QWidget(parent), socket(socket), login(login)
 {
-    //Создание и настройка виджетов
+    // Создание и настройка виджетов
     instructionsLabel = new QLabel(tr("Введите ваше имя"));
     QFont labelFont = instructionsLabel->font();
     labelFont.setPointSize(14);
@@ -23,18 +34,21 @@ NicknameForm::NicknameForm(QTcpSocket *socket, QString login, QWidget *parent) :
     saveButton = new QPushButton(tr("Сохранить"));
     saveButton->setFixedWidth(200);
 
-    //Размещение виджетов в слое компоновки
+    // Размещение виджетов в слое компоновки
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->addWidget(instructionsLabel);
     layout->addWidget(nicknameEdit);
     layout->addWidget(saveButton);
     layout->setAlignment(Qt::AlignCenter);
 
-    //Подключение сигнала от кнопки к слоту saveNickname
+    // Подключение сигнала от кнопки к слоту saveNickname
     connect(saveButton, &QPushButton::clicked, this, &NicknameForm::saveNickname);
 }
 
-//Сохранение имени
+/**
+ * /brief Слот для сохранения имени пользователя.
+ * Проверяет введенное имя и отправляет запрос на сервер для обновления имени.
+ */
 void NicknameForm::saveNickname()
 {
     QString nickname = nicknameEdit->text().trimmed();
@@ -60,7 +74,10 @@ void NicknameForm::saveNickname()
     socket->flush();
 }
 
-//Обработка ответа от сервера
+/**
+ * /brief Обработка ответа от сервера.
+ * Выводит сообщение о результате обновления имени пользователя.
+ */
 void NicknameForm::handleServerResponse()
 {
     QByteArray responseData = socket->readAll();
@@ -79,7 +96,9 @@ void NicknameForm::handleServerResponse()
     }
 }
 
-//Подключение к сокету для отправки сообщений на сервер и получения ответов
+/**
+ * /brief Подключает сокет для отправки сообщений на сервер и получения ответов.
+ */
 void NicknameForm::connectSocket()
 {
     connect(socket, &QTcpSocket::readyRead, this, &NicknameForm::handleServerResponse);

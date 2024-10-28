@@ -1,9 +1,19 @@
+/**
+ * /file mainwindow.cpp
+ * /brief Реализация главного окна мессенджера.
+ */
+
 #include "mainwindow.h"
 
 #include <QMessageBox>
 #include <QJsonDocument>
 #include <QJsonObject>
 
+/**
+ * /brief Конструктор MainWindow.
+ * /param socket Указатель на QTcpSocket для работы с сетевыми соединениями.
+ * /param parent Указатель на родительский виджет.
+ */
 MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent), socket(socket)
 {
     setWindowIcon(QIcon(":/images/logo.png"));
@@ -16,7 +26,7 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent
     connect(loginForm, &LoginForm::registerRequested, this, &MainWindow::showRegistrationForm);
     connect(registrationForm, &RegistrationForm::backRequested, this, &MainWindow::showLoginForm);
 
-    //Если хотим иметь возможность возвращаться на виджет LoginForm после неудачной регистрации
+    // Если хотим иметь возможность возвращаться на виджет LoginForm после неудачной регистрации
     connect(registrationForm, &RegistrationForm::backRequested, this, &MainWindow::loginRequested);
 
     connect(loginForm, &LoginForm::loginSuccess, this, &MainWindow::onLoginSuccess);
@@ -25,7 +35,9 @@ MainWindow::MainWindow(QTcpSocket *socket, QWidget *parent) : QMainWindow(parent
     loginForm->connectSocket();
 }
 
-//Слот для отображения формы авторизации
+/**
+ * /brief Слот для отображения формы авторизации.
+ */
 void MainWindow::showLoginForm()
 {
     disconnect(socket, nullptr, this, nullptr);
@@ -34,16 +46,16 @@ void MainWindow::showLoginForm()
     {
         if (centralWidget()->layout())
         {
-            centralWidget()->layout()->removeWidget(registrationForm); //Удаляет виджет из лейаута
-             registrationForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+            centralWidget()->layout()->removeWidget(registrationForm); // Удаляет виджет из лейаута
+            registrationForm->setParent(nullptr); // Отсоединить виджет, чтобы избежать его удаления
         }
     }
     if(currentCentralWidget == messengerForm)
     {
         if (centralWidget()->layout())
         {
-            centralWidget()->layout()->removeWidget(messengerForm); //Удаляет виджет из лейаута
-            messengerForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+            centralWidget()->layout()->removeWidget(messengerForm); // Удаляет виджет из лейаута
+            messengerForm->setParent(nullptr); // Отсоединить виджет, чтобы избежать его удаления
         }
     }
     setCentralWidget(loginForm);
@@ -53,28 +65,32 @@ void MainWindow::showLoginForm()
     loginForm->connectSocket();
 }
 
-//Слот для отображения формы регистрации
+/**
+ * /brief Слот для отображения формы регистрации.
+ */
 void MainWindow::showRegistrationForm()
 {
     disconnect(socket, nullptr, this, nullptr);
     if (centralWidget()->layout())
     {
-        centralWidget()->layout()->removeWidget(loginForm); //Удаляет виджет из лейаута
+        centralWidget()->layout()->removeWidget(loginForm); // Удаляет виджет из лейаута
     }
-    loginForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+    loginForm->setParent(nullptr); // Отсоединить виджет, чтобы избежать его удаления
     setCentralWidget(registrationForm);
     setWindowTitle(tr("Регистрация"));
     registrationForm->connectSocket();
 }
 
-//Слот для отображения формы ввода имени
+/**
+ * /brief Слот для отображения формы ввода имени.
+ */
 void MainWindow::showNicknameForm()
 {
     disconnect(socket, nullptr, this, nullptr);
 
     if (centralWidget()->layout())
     {
-        centralWidget()->layout()->removeWidget(loginForm); //Удаляет виджет из лейаута
+        centralWidget()->layout()->removeWidget(loginForm); // Удаляет виджет из лейаута
     }
     loginForm->setParent(nullptr);
     setCentralWidget(nicknameForm);
@@ -83,7 +99,9 @@ void MainWindow::showNicknameForm()
     nicknameForm->connectSocket();
 }
 
-//Слов для отображения формы списка чатов
+/**
+ * /brief Слот для отображения формы списка чатов.
+ */
 void MainWindow::showMessengerForm()
 {
     disconnect(socket, nullptr, this, nullptr);
@@ -119,26 +137,31 @@ void MainWindow::showMessengerForm()
     messengerForm->requestChatList();
 }
 
-//Слот для отображения формы настроек
+/**
+ * /brief Слот для отображения формы настроек.
+ */
 void MainWindow::showSettingsForm()
 {
     disconnect(socket, nullptr, this, nullptr);
     if (centralWidget()->layout())
     {
-        centralWidget()->layout()->removeWidget(messengerForm); //Удаляет виджет из лейаута
+        centralWidget()->layout()->removeWidget(messengerForm); // Удаляет виджет из лейаута
     }
-    messengerForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+    messengerForm->setParent(nullptr); // Отсоединить виджет, чтобы избежать его удаления
     setCentralWidget(settingsForm);
     setWindowTitle(tr("Настройки"));
     settingsForm->connectSocket();
     settingsForm->requestNickname();
 }
 
-//Обработка закрытия окна
+/**
+ * /brief Обработка закрытия окна.
+ * /param event Указатель на событие закрытия.
+ */
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     QMessageBox::StandardButton resBtn = QMessageBox::question(this, tr("Подтверждение"),
-        tr("Вы уверены, что хотите закрыть мессенджер?"), QMessageBox::No | QMessageBox::Yes, QMessageBox::Yes);
+                                                               tr("Закрыть мессенджер?"), QMessageBox::No | QMessageBox::Yes, QMessageBox::Yes);
     if (resBtn != QMessageBox::Yes)
     {
         event->ignore();
@@ -149,7 +172,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
-//В случае успешной авторизации
+/**
+ * /brief Слот, вызываемый при успешной авторизации.
+ */
 void MainWindow::onLoginSuccess()
 {
     loginForm->hide();
@@ -166,14 +191,24 @@ void MainWindow::onLoginSuccess()
     isNicknameNewUser();
 }
 
-//Был запрос на открытие чата
+/**
+ * /brief Запрос на открытие чата.
+ * /param chatId Идентификатор чата.
+ * /param userNickname Псевдоним пользователя.
+ * /param chatType Тип чата ("personal" или "group").
+ */
 void MainWindow::onChatRequested(QString chatId, QString userNickname, QString chatType)
 {
     qDebug() << "MainWindow received chatRequested signal with chatId:" << chatId << " and userNickname:" << userNickname;
     showChatForm(chatId, userNickname, chatType);
 }
 
-// Слот для отображения формы чата
+/**
+ * /brief Слот для отображения формы чата.
+ * /param chatId Идентификатор чата.
+ * /param userNickname Псевдоним пользователя.
+ * /param chatType Тип чата ("personal" или "group").
+ */
 void MainWindow::showChatForm(QString chatId, QString userNickname, QString chatType)
 {
     disconnect(socket, nullptr, this, nullptr);  // Отключаем все предыдущие подключения к сокетам
@@ -203,42 +238,53 @@ void MainWindow::showChatForm(QString chatId, QString userNickname, QString chat
         groupchatForm->connectSocket();
     }
 }
-//Слот для отображения формы чата
+
+/**
+ * /brief Слот для отображения формы группового чата.
+ * /param chatId Идентификатор чата.
+ * /param userNickname Псевдоним пользователя.
+ */
 void MainWindow::showGroupChatForm(QString chatId, QString userNickname)
 {
-    disconnect(socket, nullptr, this, nullptr);  //Отключаем все предыдущие подключения к сокетам
+    disconnect(socket, nullptr, this, nullptr);  // Отключаем все предыдущие подключения к сокетам
     QWidget *currentCentralWidget = centralWidget();
     if(currentCentralWidget == settingsgroupchatForm)
     {
         if (centralWidget()->layout())
         {
-            centralWidget()->layout()->removeWidget(settingsgroupchatForm); //Удаляет виджет из лейаута
-            settingsgroupchatForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+            centralWidget()->layout()->removeWidget(settingsgroupchatForm); // Удаляет виджет из лейаута
+            settingsgroupchatForm->setParent(nullptr); // Отсоединить виджет, чтобы избежать его удаления
         }
     }
     if(currentCentralWidget == messengerForm)
     {
         if (centralWidget()->layout())
         {
-            centralWidget()->layout()->removeWidget(messengerForm); //Удаляет виджет из лейаута
-            messengerForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+            centralWidget()->layout()->removeWidget(messengerForm); // Удаляет виджет из лейаута
+            messengerForm->setParent(nullptr); // Отсоединить виджет, чтобы избежать его удаления
         }
     }
 
     groupchatForm = new GroupChatForm(socket, login, chatId, this);
-    connect(groupchatForm, &GroupChatForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);  //Подключаем слот для возврата
+    connect(groupchatForm, &GroupChatForm::backToMessengerFormRequested, this, &MainWindow::showMessengerForm);  // Подключаем слот для возврата
     connect(groupchatForm, &GroupChatForm::sendChatId, this, &MainWindow::setChatId);
     setCentralWidget(groupchatForm);
     setWindowTitle(tr("Чат с ") + userNickname);
     groupchatForm->connectSocket();
 }
 
+/**
+ * /brief Устанавливает идентификатор чата.
+ * /param chatId Идентификатор чата.
+ */
 void MainWindow::setChatId(QString chatId)
 {
     this->chatId = chatId;
 }
 
-//Для проверки является ли имя пользователя "New user"
+/**
+ * /brief Проверяет, является ли имя пользователя новым.
+ */
 void MainWindow::isNicknameNewUser()
 {
     QJsonObject request;
@@ -250,9 +296,12 @@ void MainWindow::isNicknameNewUser()
     socket->flush();
 }
 
+/**
+ * /brief Обрабатывает статус ника пользователя.
+ */
 void MainWindow::receiveNicknameStatus()
 {
-    //Имеются ли доступные данные для чтения
+    // Имеются ли доступные данные для чтения
     if (socket->bytesAvailable() == 0)
     {
         return;
@@ -263,7 +312,7 @@ void MainWindow::receiveNicknameStatus()
     qDebug() << QJsonDocument(doc).toJson(QJsonDocument::Compact);
     if (!doc.isObject())
     {
-        return; //Если данные не могут быть разобраны как JSON объект, выходим из метода
+        return; // Если данные не могут быть разобраны как JSON объект, выходим из метода
     }
     QJsonObject response = doc.object();
     qDebug() << "MainWindow Response data:" << response;
@@ -272,19 +321,21 @@ void MainWindow::receiveNicknameStatus()
     {
         qDebug() << "New user\n";
         qDebug() << response["nickname"].toString();
-        //Передать подключение
+        // Передать подключение
         disconnect(socket, nullptr, this, nullptr);
         showNicknameForm();
     } else {
         qDebug() << "Not new user\n";
         qDebug() << response["nickname"].toString();
-        //Передать подключение
+        // Передать подключение
         disconnect(socket, nullptr, this, nullptr);
         showMessengerForm();
     }
 }
 
-//Слот для отображения формы авторизации
+/**
+ * /brief Слот для отображения формы настроек группового чата.
+ */
 void MainWindow::showSettingsGroupChatForm()
 {
     settingsgroupchatForm = new SettingsGroupChatForm(socket, login, chatId, this);
@@ -292,8 +343,8 @@ void MainWindow::showSettingsGroupChatForm()
     QWidget *currentCentralWidget = centralWidget();
     if (centralWidget()->layout())
     {
-        centralWidget()->layout()->removeWidget(groupchatForm); //Удаляет виджет из лейаута
-        groupchatForm->setParent(nullptr); //Отсоединить виджет, чтобы избежать его удаления
+        centralWidget()->layout()->removeWidget(groupchatForm); // Удаляет виджет из лейаута
+        groupchatForm->setParent(nullptr); // Отсоединить виджет, чтобы избежать его удаления
     }
     setCentralWidget(settingsgroupchatForm);
     if(currentCentralWidget == groupchatForm)
@@ -302,6 +353,7 @@ void MainWindow::showSettingsGroupChatForm()
     settingsgroupchatForm->connectSocket();
 }
 
-//Была нажата кнопка "Выйти"
+/**
+ * /brief Обрабатывает выход из аккаунта.
+ */
 void MainWindow::handleLogout() { showLoginForm(); }
-

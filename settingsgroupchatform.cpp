@@ -1,14 +1,28 @@
+/**
+ * /file settingsgroupchatform.cpp
+ * /brief Реализация класса формы настроек группового чата.
+ */
+
 #include "settingsgroupchatform.h"
 #include <QByteArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 
-//Подключение к сокету для отправки сообщений на сервер и получения ответов
+/**
+ * /brief Подключает сокет для отправки сообщений на сервер и получения ответов.
+ */
 void SettingsGroupChatForm::connectSocket()
 {
     connect(socket, &QTcpSocket::readyRead, this, &SettingsGroupChatForm::onServerResponse);
 }
 
+/**
+ * /brief Конструктор SettingsGroupChatForm.
+ * /param socket Указатель на QTcpSocket для работы с сетевыми соединениями.
+ * /param login Логин пользователя.
+ * /param chatId Идентификатор группового чата.
+ * /param parent Указатель на родительский виджет.
+ */
 SettingsGroupChatForm::SettingsGroupChatForm(QTcpSocket *socket, QString login, QString chatId, QWidget *parent)
     : QWidget(parent), socket(socket), login(login), chatId(chatId)
 {
@@ -18,6 +32,7 @@ SettingsGroupChatForm::SettingsGroupChatForm(QTcpSocket *socket, QString login, 
     availableUsersList = new QListWidget(this);
     searchEdit = new QLineEdit();
     searchEdit->setPlaceholderText(tr("Поиск..."));
+
     connect(searchEdit, &QLineEdit::textChanged, this, &SettingsGroupChatForm::onSearchTextChanged);
 
     // Подключение сигналов кнопок к слотам
@@ -42,7 +57,6 @@ SettingsGroupChatForm::SettingsGroupChatForm(QTcpSocket *socket, QString login, 
     // Инициализация контекстного меню
     contextMenu = new QMenu(this);
     addAction = new QAction(tr("Добавить"), this);
-
     contextMenu->addAction(addAction);
 
     // Подключение сигналов для контекстного меню
@@ -52,7 +66,10 @@ SettingsGroupChatForm::SettingsGroupChatForm(QTcpSocket *socket, QString login, 
     connect(availableUsersList, &QListWidget::customContextMenuRequested, this, &SettingsGroupChatForm::showContextMenu);
 }
 
-// Метод для показа контекстного меню
+/**
+ * /brief Метод для показа контекстного меню.
+ * /param pos Позиция, в которой должно появиться меню.
+ */
 void SettingsGroupChatForm::showContextMenu(const QPoint &pos)
 {
     QListWidgetItem *item = availableUsersList->itemAt(pos);
@@ -62,7 +79,9 @@ void SettingsGroupChatForm::showContextMenu(const QPoint &pos)
     }
 }
 
-// Обработка нажатия кнопки "Удалить"
+/**
+ * /brief Обработка нажатия кнопки "Удалить" пользователя из списка участников.
+ */
 void SettingsGroupChatForm::onRemoveButtonClick()
 {
     QListWidgetItem *selectedItem = participantsList->currentItem();
@@ -73,14 +92,18 @@ void SettingsGroupChatForm::onRemoveButtonClick()
     }
 }
 
-//Обработка нажатия кнопки "Назад"
+/**
+ * /brief Обработка нажатия кнопки "Назад".
+ */
 void SettingsGroupChatForm::handleBackClick()
 {
     disconnect(socket, &QTcpSocket::readyRead, this, &SettingsGroupChatForm::onServerResponse);
-    //Испускает сигнал, который сообщит MainWindow, что нужно вернуться к MessengerForm
-    emit backToMessengerFormRequested();
+    emit backToMessengerFormRequested(); // Испускает сигнал для возврата к MessengerForm
 }
 
+/**
+ * /brief Слот обработки ответов сервера.
+ */
 void SettingsGroupChatForm::onServerResponse()
 {
     QByteArray responseData = socket->readAll();
@@ -88,14 +111,16 @@ void SettingsGroupChatForm::onServerResponse()
     QJsonObject jsonObj = jsonDoc.object();
     qDebug() << "SettingsGroupChatForm Response data: " << jsonObj;
 
-    // Handle different types of responses
+    // Обработка различных типов ответов
     if (jsonObj.contains("users") && jsonObj["users"].isArray()) {
         QJsonArray usersArray = jsonObj["users"].toArray();
-        updateUserList(usersArray);
+        updateUserList(usersArray); // Обновление списка пользователей
     }
 }
 
-//Метод для отправки запроса на поиск пользователя
+/**
+ * /brief Метод для отправки запроса на поиск пользователя.
+ */
 void SettingsGroupChatForm::findUsers()
 {
     QString searchText = searchEdit->text().trimmed();
@@ -109,7 +134,10 @@ void SettingsGroupChatForm::findUsers()
     socket->flush();
 }
 
-//Обновить список пользователей при поиске
+/**
+ * /brief Обновляет список доступных пользователей при поиске.
+ * /param users Массив JSON с пользователями.
+ */
 void SettingsGroupChatForm::updateUserList(QJsonArray users)
 {
     availableUsersList->clear();
@@ -121,27 +149,25 @@ void SettingsGroupChatForm::updateUserList(QJsonArray users)
         QListWidgetItem *userItem = new QListWidgetItem(nickname);
         userItem->setData(Qt::UserRole, login);  // Сохраняем login пользователя
         userItem->setData(Qt::UserRole + 1, nickname);  // Сохраняем nickname пользователя
-        userItem->setData(Qt::UserRole + 2, login);  // Дублируем login пользователя в другом поле (для проверки корректности)
         availableUsersList->addItem(userItem);
     }
 }
 
-
-//Обработка ответов от сервера
-void SettingsGroupChatForm::onReadyRead()
-{
-
-}
-
-//Если текст в строке поиска изменился
+/**
+ * /brief Вызывается при изменении текста в строке поиска.
+ * /param text Введённый текст для поиска.
+ */
 void SettingsGroupChatForm::onSearchTextChanged(const QString &text)
 {
     if (!text.isEmpty())
     {
-        findUsers();
+        findUsers(); // Запрос пользователей по введённому тексту
     }
 }
 
+/**
+ * /brief Обработчик нажатия кнопки "Добавить" пользователя в чат.
+ */
 void SettingsGroupChatForm::onAddButtonClick()
 {
     QListWidgetItem *selectedItem = availableUsersList->currentItem();
@@ -168,5 +194,3 @@ void SettingsGroupChatForm::onAddButtonClick()
         availableUsersList->takeItem(availableUsersList->row(selectedItem)); // Удаление пользователя из доступного списка
     }
 }
-
-

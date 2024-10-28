@@ -8,9 +8,17 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+/*!
+ * \brief Конструктор класса LoginForm.
+ *
+ * Создает экземпляр формы входа и инициализирует интерфейс.
+ *
+ * \param socket Указатель на сокет для сетевого взаимодействия.
+ * \param parent Указатель на родительский виджет (по умолчанию nullptr).
+ */
 LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), socket(socket)
 {
-    registerLabel = new QLabel(tr("Еще нет аккаунта? <a href=\"register\" style=\"color:#1E90FF;\">Зарегистрироваться</a>"));
+    registerLabel = new QLabel(tr("<a href=\"register\" style=\"color:#1E90FF;\">  Зарегистрироваться</a>"));
     QFont titleFont = registerLabel->font();
     titleFont.setPointSize(10);
     registerLabel->setFont(titleFont);
@@ -31,7 +39,7 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
     passwordEdit->setEchoMode(QLineEdit::Password);
     passwordEdit->setFixedWidth(200);
 
-    //Инициализация иконок глаза
+    // Инициализация иконок глаза
     openedEyeLabelPass = new QLabel(this);
     closedEyeLabelPass = new QLabel(this);
     QPixmap openedEyePixmap(":/images/icon-eye-opened.png");
@@ -40,7 +48,7 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
     openedEyeLabelPass->setPixmap(openedEyePixmap.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     openedEyeLabelPass->hide();
 
-    //Горизонтальный лэйаут для поля ввода пароля и иконок
+    // Горизонтальный лэйаут для поля ввода пароля и иконок
     QHBoxLayout *passwordLayout = new QHBoxLayout();
     passwordLayout->addStretch(5);
     passwordLayout->addWidget(passwordEdit);
@@ -68,54 +76,69 @@ LoginForm::LoginForm(QTcpSocket *socket, QWidget *parent) : QWidget(parent), soc
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addLayout(topLayout);
     mainLayout->addLayout(centerLayout);
+
     setLayout(mainLayout);
 
     connect(registerLabel, &QLabel::linkActivated, this, &LoginForm::onRegisterClicked);
     connect(loginButton, &QPushButton::clicked, this, &LoginForm::attemptLogin);
-
 }
 
-//Фильтр событий
+/*!
+ * \brief Фильтр событий.
+ *
+ * Этот метод обрабатывает события мыши для переключения видимости пароля.
+ *
+ * \param obj Указатель на объект, который отправил событие.
+ * \param event Указатель на объект события.
+ * \return true если событие было обработано; в противном случае false.
+ */
 bool LoginForm::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::MouseButtonPress)
     {
         if (obj == closedEyeLabelPass || obj == openedEyeLabelPass)
         {
-            //Переключение видимости пароля для поля passwordEdit
+            // Переключение видимости пароля для поля passwordEdit
             bool isPasswordVisible = passwordEdit->echoMode() == QLineEdit::Normal;
             passwordEdit->setEchoMode(isPasswordVisible ? QLineEdit::Password : QLineEdit::Normal);
-            closedEyeLabelPass->setVisible(isPasswordVisible); //Если пароль был видим, показываем закрытый глаз
-            openedEyeLabelPass->setVisible(!isPasswordVisible); //Если пароль был скрыт, показываем открытый глаз
-            return true; //Возвращаем true, чтобы указать, что событие обработано
+            closedEyeLabelPass->setVisible(isPasswordVisible); // Если пароль был видим, показываем закрытый глаз
+            openedEyeLabelPass->setVisible(!isPasswordVisible); // Если пароль был скрыт, показываем открытый глаз
+            return true; // Возвращаем true, чтобы указать, что событие обработано
         }
     }
-    return QWidget::eventFilter(obj, event); //Вызов базового обработчика для других классов
+    return QWidget::eventFilter(obj, event); // Вызов базового обработчика для других классов
 }
 
-//Нажатие на ссылку "Зарегистрироваться"
+/*!
+ * \brief Обрабатывает нажатие на ссылку "Зарегистрироваться".
+ *
+ * Этот слот очищает поля ввода и отправляет сигнал о запросе перехода к форме регистрации.
+ */
 void LoginForm::onRegisterClicked()
 {
-    //Используется для эмитирования сигнала при нажатии на ссылку регистрации
     loginEdit->clear();
     passwordEdit->clear();
     disconnect(socket, nullptr, this, nullptr);
     emit registerRequested();
 }
 
-//Нажатие на кнопку "Войти"
+/*!
+ * \brief Обрабатывает нажатие кнопки "Войти".
+ *
+ * Этот слот проверяет заполненность полей ввода и отправляет запрос на сервер для входа.
+ */
 void LoginForm::attemptLogin()
 {
     QString login = loginEdit->text();
     QString password = passwordEdit->text();
 
-    if(login.isEmpty() || password.isEmpty())
+    if (login.isEmpty() || password.isEmpty())
     {
         QMessageBox::warning(this, tr("Ошибка входа"), tr("Все поля должны быть заполнены."));
         return;
     }
 
-    //Хеширование пароля
+    // Хеширование пароля
     QByteArray byteArrayPasswordSalt = (password + login).toUtf8();
     QByteArray hashedPassword = QCryptographicHash::hash(byteArrayPasswordSalt, QCryptographicHash::Sha512).toHex();
 
@@ -130,7 +153,11 @@ void LoginForm::attemptLogin()
     socket->flush();
 }
 
-//Обработка ответа от сервера
+/*!
+ * \brief Обрабатывает ответ от сервера.
+ *
+ * Этот слот проверяет статус ответа от сервера и выполняет соответствующие действия.
+ */
 void LoginForm::handleServerResponse()
 {
     QByteArray responseData = socket->readAll();
@@ -138,7 +165,7 @@ void LoginForm::handleServerResponse()
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
 
-    if(jsonObj["status"].toString() == "success")
+    if (jsonObj["status"].toString() == "success")
     {
         login = loginEdit->text();
         qDebug() << login << "\n";
@@ -155,9 +182,18 @@ void LoginForm::handleServerResponse()
     }
 }
 
+/*!
+ * \brief Получает логин пользователя.
+ *
+ * \return Логин пользователя.
+ */
 QString LoginForm::getLogin() { return login; }
 
-//Подключение к сокету для отправки сообщений на сервер и получения ответов
+/*!
+ * \brief Подключает сокет для обработки ответов от сервера.
+ *
+ * Этот метод устанавливает соединение с сокетом для обработки входящих данных.
+ */
 void LoginForm::connectSocket()
 {
     connect(socket, &QTcpSocket::readyRead, this, &LoginForm::handleServerResponse);

@@ -1,3 +1,8 @@
+/**
+ * /file settingsform.cpp
+ * /brief Реализация класса формы настроек пользователя.
+ */
+
 #include "settingsform.h"
 
 #include <QVBoxLayout>
@@ -12,18 +17,21 @@
 #include <QInputDialog>
 #include <QCryptographicHash>
 
+/**
+ * /brief Конструктор SettingsForm.
+ * /param socket Указатель на QTcpSocket для работы с сетевыми соединениями.
+ * /param login Логин пользователя.
+ * /param parent Указатель на родительский виджет.
+ */
 SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) : socket(socket), login(login)
 {
     backButton = new QPushButton(tr("Назад"), this);
     backButton->setFixedWidth(120);
 
-    blacklistButton = new QPushButton(tr("Чёрный список"), this);
-    blacklistButton->setFixedWidth(120);
-
     loginLabel = new QLabel(tr("Ваш логин:"), this);
     loginEdit = new QLineEdit(this);
     loginEdit->setText(login);
-    loginEdit->setReadOnly(true); //Поле для ввода, в котором нельзя писать
+    loginEdit->setReadOnly(true); // Поле для ввода, в котором нельзя писать
     loginEdit->setFixedWidth(200);
 
     changeLoginButton = new QPushButton(tr("Сменить логин"), this);
@@ -42,10 +50,10 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
 
     changePasswordButton = new QPushButton(tr("Сменить пароль"), this);
 
+    // Слои для компоновки кнопок и полей ввода
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(backButton);
     topLayout->addStretch();
-    topLayout->addWidget(blacklistButton);
 
     QHBoxLayout *loginLayout = new QHBoxLayout();
     loginLayout->addStretch();
@@ -74,6 +82,7 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
     saveLoginButton->hide();
     saveNameButton->hide();
 
+    // Подключение сигналов к слотам
     connect(changeLoginButton, &QPushButton::clicked, this, &SettingsForm::enableLoginEdit);
     connect(saveLoginButton, &QPushButton::clicked, this, &SettingsForm::saveLogin);
     connect(changeNameButton, &QPushButton::clicked, this, &SettingsForm::enableNameEdit);
@@ -81,12 +90,14 @@ SettingsForm::SettingsForm(QTcpSocket *socket, QString login, QWidget *parent) :
     connect(backButton, &QPushButton::clicked, this, &SettingsForm::handleBackClick);
     connect(changePasswordButton, &QPushButton::clicked, this, &SettingsForm::enablePasswordChange);
     nameEdit->setText(nickname);
-    nameEdit->setReadOnly(true); //Поле для ввода, в котором нельзя писать
+    nameEdit->setReadOnly(true); // Поле для ввода, в котором нельзя писать
 
     setLayout(mainLayout);
 }
 
-//Разрешить редактирование поля для ввода логина
+/**
+ * /brief Разрешает редактирование поля для ввода логина.
+ */
 void SettingsForm::enableLoginEdit()
 {
     loginEdit->setReadOnly(false);
@@ -94,7 +105,9 @@ void SettingsForm::enableLoginEdit()
     saveLoginButton->show();
 }
 
-//Разрешить редактирование поля для ввода имени (nickname)
+/**
+ * /brief Разрешает редактирование поля для ввода имени (nickname).
+ */
 void SettingsForm::enableNameEdit()
 {
     nameEdit->setReadOnly(false);
@@ -102,7 +115,9 @@ void SettingsForm::enableNameEdit()
     saveNameButton->show();
 }
 
-//Сохранение введенного логина
+/**
+ * /brief Сохраняет введённый логин.
+ */
 void SettingsForm::saveLogin()
 {
     QString newLogin = loginEdit->text();
@@ -115,18 +130,18 @@ void SettingsForm::saveLogin()
         return;
     }
 
-    //Проверяем, что новый логин не пуст и содержит только допустимые символы
+    // Проверяет, что новый логин не пуст и содержит только допустимые символы
     if(newLogin.isEmpty() || !loginContainsOnlyAllowedCharacters(newLogin)) {
         QMessageBox::warning(this, tr("Ошибка"), tr("Указан недопустимый логин."));
         return;
     }
 
-    //Запрос пароля у пользователя
+    // Запрос пароля у пользователя
     bool ok;
     QString password = QInputDialog::getText(this, tr("Подтверждение логина"),
         tr("Введите ваш пароль:"), QLineEdit::Password, "", &ok);
 
-    //Если пользователь нажал OK и ввёл пароль
+    // Если пользователь нажал OK и ввёл пароль
     if(ok && !password.isEmpty())
     {
         QJsonObject request;
@@ -145,12 +160,14 @@ void SettingsForm::saveLogin()
     }
 }
 
-//Сохранение введенного имени (nickname)
+/**
+ * /brief Сохраняет введённое имя (nickname).
+ */
 void SettingsForm::saveName()
 {
     QString newName = nameEdit->text();
 
-    //Проверяем, что новое имя не пустое и не по умолчанию
+    // Проверяет, что новое имя не пустое и не по умолчанию
     if(newName.isEmpty() || newName == "New user")
     {
         QMessageBox::warning(this, tr("Ошибка"), tr("Указано недопустимое имя."));
@@ -167,13 +184,16 @@ void SettingsForm::saveName()
     socket->flush();
 }
 
-//Слот обработки ответов сервера
+/**
+ * /brief Слот обработки ответов сервера.
+ */
 void SettingsForm::onServerResponse()
 {
     QByteArray responseData = socket->readAll();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
     QJsonObject jsonObj = jsonDoc.object();
     qDebug() << "SettingsForm Response data:" << responseData;
+
     if (jsonObj.contains("status"))
     {
         QString status = jsonObj["status"].toString();
@@ -190,7 +210,7 @@ void SettingsForm::onServerResponse()
         else if (status == "error" && jsonObj["type"].toString() == "update_login")
         {
             QString message = jsonObj.contains("message") ? jsonObj["message"].toString() :
-                                  tr("Логин не соответствует правилам, либо уже используется.");
+                              tr("Логин не соответствует правилам, либо уже используется.");
             QMessageBox::warning(this, tr("Ошибка"), message);
             // Возвращаем старое значение логина в поле, если ошибка
             loginEdit->setText(login);
@@ -218,40 +238,50 @@ void SettingsForm::onServerResponse()
         else if (status == "error" && jsonObj["type"].toString() == "check_nickname") {
             QString message = jsonObj.contains("message") ? jsonObj["message"].toString() : tr("Произошла ошибка.");
             QMessageBox::warning(this, tr("Ошибка"), "Данный логин уже используется.");
-
         }
-        if (status == "success" &&  jsonObj["type"].toString() == "update_password") {
+        if (status == "success" && jsonObj["type"].toString() == "update_password")
+        {
             QMessageBox::information(this, tr("Успех"), tr("Пароль успешно обновлён."));
         }
-        else if (status == "error" &&  jsonObj["type"].toString() == "update_password") {
+        else if (status == "error" && jsonObj["type"].toString() == "update_password")
+        {
             QString message = jsonObj.contains("message") ? jsonObj["message"].toString() : tr("Произошла ошибка.");
             QMessageBox::warning(this, tr("Ошибка"), message);
         }
     }
 }
 
-//Подключение к сокету для отправки сообщений на сервер и получения ответов
+/**
+ * /brief Подключает сокет для отправки сообщений на сервер и получения ответов.
+ */
 void SettingsForm::connectSocket()
 {
     connect(socket, &QTcpSocket::readyRead, this, &SettingsForm::onServerResponse);
 }
 
-//Обработка нажатия кнопки "Назад"
+/**
+ * /brief Обрабатывает нажатие кнопки "Назад".
+ */
 void SettingsForm::handleBackClick()
 {
     disconnect(socket, &QTcpSocket::readyRead, this, &SettingsForm::onServerResponse);
-    //Испускает сигнал, который сообщит MainWindow, что нужно вернуться к MessengerForm
-    emit backToMessengerFormRequested();
+    emit backToMessengerFormRequested(); // Испускает сигнал для возврата к MessengerForm
 }
 
-//Проверка логина
+/**
+ * /brief Проверка логина на допустимые символы.
+ * /param login Логин для проверки.
+ * /return Признак, содержит ли логин только разрешённые символы (true, если содержит).
+ */
 bool SettingsForm::loginContainsOnlyAllowedCharacters(const QString &login)
 {
-    QRegularExpression loginRegExp("^[A-Za-z\\d_-]+$"); //Регулярное выражение для допустимых символов в логине
+    QRegularExpression loginRegExp("^[A-Za-z\\d_-]+$"); // Регулярное выражение для допустимых символов в логине
     return login.contains(loginRegExp);
 }
 
-//Запрос имени (nickname)
+/**
+ * /brief Запрашивает текущее имя (nickname) пользователя.
+ */
 void SettingsForm::requestNickname()
 {
     if (!login.isEmpty())
@@ -266,13 +296,17 @@ void SettingsForm::requestNickname()
     }
 }
 
-//Проверка пароля
+/**
+ * /brief Проверка пароля на соответствие требованиям.
+ * /param password Пароль для проверки.
+ * /return Признак, соответствует ли пароль требованиям (true, если соответствует).
+ */
 bool SettingsForm::passwordContainsRequiredCharacters(const QString &password)
 {
-    QRegularExpression upperCaseRegExp("[A-Z]"); //Регулярное выражение для заглавных букв
-    QRegularExpression lowerCaseRegExp("[a-z]"); //Регулярное выражение для строчных букв
-    QRegularExpression digitRegExp("\\d");       //Регулярное выражение для цифр
-    QRegularExpression specialRegExp("[!@#$%^&*()_+=-]"); //Регулярное выражение для специальных символов
+    QRegularExpression upperCaseRegExp("[A-Z]"); // Регулярное выражение для заглавных букв
+    QRegularExpression lowerCaseRegExp("[a-z]"); // Регулярное выражение для строчных букв
+    QRegularExpression digitRegExp("\\d");       // Регулярное выражение для цифр
+    QRegularExpression specialRegExp("[!/#$%^&*()_+=-]"); // Регулярное выражение для специальных символов
 
     return password.contains(upperCaseRegExp) &&
            password.contains(lowerCaseRegExp) &&
@@ -280,15 +314,17 @@ bool SettingsForm::passwordContainsRequiredCharacters(const QString &password)
            password.contains(specialRegExp);
 }
 
-//Была нажата кнопка "Изменить пароль"
+/**
+ * /brief Обрабатывает нажатие кнопки "Изменить пароль".
+ */
 void SettingsForm::enablePasswordChange()
 {
-    //Создаем диалоговое окно для ввода паролей
+    // Создаем диалоговое окно для ввода паролей
     QDialog passwordDialog(this);
     passwordDialog.setWindowTitle(tr("Сменить пароль"));
     passwordDialog.setFixedSize(300, 200);
 
-    //Поля ввода для текущего пароля, нового пароля и подтверждения нового пароля
+    // Поля ввода для текущего пароля, нового пароля и подтверждения нового пароля
     QLabel *currentPasswordLabel = new QLabel(tr("Введите пароль:"), &passwordDialog);
     QLineEdit *currentPasswordEdit = new QLineEdit(&passwordDialog);
     currentPasswordEdit->setEchoMode(QLineEdit::Password);
@@ -304,7 +340,7 @@ void SettingsForm::enablePasswordChange()
     confirmPasswordEdit->setEchoMode(QLineEdit::Password);
     confirmPasswordEdit->setFixedWidth(200);
 
-    //Добавляем кнопки ОК и Отмена
+    // Добавляем кнопки ОК и Отмена
     QPushButton *okButton = new QPushButton(tr("ОК"), &passwordDialog);
     QPushButton *cancelButton = new QPushButton(tr("Отмена"), &passwordDialog);
 
@@ -323,20 +359,20 @@ void SettingsForm::enablePasswordChange()
 
     passwordDialog.setLayout(dialogLayout);
 
-    //Подключаем кнопку ОК
+    // Подключаем кнопку ОК
     connect(okButton, &QPushButton::clicked, [&]() {
         QString currentPassword = currentPasswordEdit->text();
         QString newPassword = newPasswordEdit->text();
         QString confirmPassword = confirmPasswordEdit->text();
 
-        //Проверяем сложность нового пароля
+        // Проверяем сложность нового пароля
         if(newPassword.length() < 8 || !passwordContainsRequiredCharacters(newPassword))
         {
             QMessageBox::warning(&passwordDialog, tr("Ошибка"), tr("Новый пароль не соответствует требованиям по сложности."));
             return;
         }
 
-        //Проверяем совпадение новых паролей
+        // Проверяем совпадение новых паролей
         if(newPassword != confirmPassword)
         {
             QMessageBox::warning(&passwordDialog, tr("Ошибка"), tr("Новые пароли не совпадают."));
@@ -357,15 +393,13 @@ void SettingsForm::enablePasswordChange()
         socket->write(requestData);
         socket->flush();
 
-        passwordDialog.accept(); //Закрываем диалоговое окно после отправки запроса
+        passwordDialog.accept(); // Закрываем диалоговое окно после отправки запроса
     });
 
-    //Подключаем кнопку Отмена
+    // Подключаем кнопку Отмена
     connect(cancelButton, &QPushButton::clicked, [&]() {
-        passwordDialog.reject(); //Закрываем диалоговое окно
+        passwordDialog.reject(); // Закрываем диалоговое окно
     });
 
-    passwordDialog.exec(); //Отображаем диалоговое окно
+    passwordDialog.exec(); // Отображаем диалоговое окно
 }
-
-
